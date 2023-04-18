@@ -1,0 +1,3 @@
+/mnt/c/users/ronco/Desktop/thesis_material/symbolic/build/CMakeFiles/main.dir
+/mnt/c/users/ronco/Desktop/thesis_material/symbolic/build/CMakeFiles/edit_cache.dir
+/mnt/c/users/ronco/Desktop/thesis_material/symbolic/build/CMakeFiles/rebuild_cache.dir

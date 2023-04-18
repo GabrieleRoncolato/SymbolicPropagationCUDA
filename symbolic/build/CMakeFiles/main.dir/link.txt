@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/main.dir/main_new.c.o CMakeFiles/main.dir/matrix.c.o CMakeFiles/main.dir/nnet.c.o -o main 
