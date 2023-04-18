@@ -53,10 +53,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /mnt/c/users/ronco/Desktop/thesis_material/symbolic
+CMAKE_SOURCE_DIR = /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /mnt/c/users/ronco/Desktop/thesis_material/symbolic/build
+CMAKE_BINARY_DIR = /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/main.dir/depend.make
@@ -72,44 +72,44 @@ include CMakeFiles/main.dir/flags.make
 CMakeFiles/main.dir/main_new.c.o: CMakeFiles/main.dir/flags.make
 CMakeFiles/main.dir/main_new.c.o: ../main_new.c
 CMakeFiles/main.dir/main_new.c.o: CMakeFiles/main.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/users/ronco/Desktop/thesis_material/symbolic/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/main.dir/main_new.c.o"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/main.dir/main_new.c.o -MF CMakeFiles/main.dir/main_new.c.o.d -o CMakeFiles/main.dir/main_new.c.o -c /mnt/c/users/ronco/Desktop/thesis_material/symbolic/main_new.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/main.dir/main_new.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/main.dir/main_new.c.o -MF CMakeFiles/main.dir/main_new.c.o.d -o CMakeFiles/main.dir/main_new.c.o -c /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/main_new.c
 
 CMakeFiles/main.dir/main_new.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/main.dir/main_new.c.i"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /mnt/c/users/ronco/Desktop/thesis_material/symbolic/main_new.c > CMakeFiles/main.dir/main_new.c.i
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/main_new.c > CMakeFiles/main.dir/main_new.c.i
 
 CMakeFiles/main.dir/main_new.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/main.dir/main_new.c.s"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /mnt/c/users/ronco/Desktop/thesis_material/symbolic/main_new.c -o CMakeFiles/main.dir/main_new.c.s
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/main_new.c -o CMakeFiles/main.dir/main_new.c.s
 
 CMakeFiles/main.dir/matrix.c.o: CMakeFiles/main.dir/flags.make
 CMakeFiles/main.dir/matrix.c.o: ../matrix.c
 CMakeFiles/main.dir/matrix.c.o: CMakeFiles/main.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/users/ronco/Desktop/thesis_material/symbolic/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/main.dir/matrix.c.o"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/main.dir/matrix.c.o -MF CMakeFiles/main.dir/matrix.c.o.d -o CMakeFiles/main.dir/matrix.c.o -c /mnt/c/users/ronco/Desktop/thesis_material/symbolic/matrix.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/main.dir/matrix.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/main.dir/matrix.c.o -MF CMakeFiles/main.dir/matrix.c.o.d -o CMakeFiles/main.dir/matrix.c.o -c /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/matrix.c
 
 CMakeFiles/main.dir/matrix.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/main.dir/matrix.c.i"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /mnt/c/users/ronco/Desktop/thesis_material/symbolic/matrix.c > CMakeFiles/main.dir/matrix.c.i
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/matrix.c > CMakeFiles/main.dir/matrix.c.i
 
 CMakeFiles/main.dir/matrix.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/main.dir/matrix.c.s"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /mnt/c/users/ronco/Desktop/thesis_material/symbolic/matrix.c -o CMakeFiles/main.dir/matrix.c.s
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/matrix.c -o CMakeFiles/main.dir/matrix.c.s
 
 CMakeFiles/main.dir/nnet.c.o: CMakeFiles/main.dir/flags.make
 CMakeFiles/main.dir/nnet.c.o: ../nnet.c
 CMakeFiles/main.dir/nnet.c.o: CMakeFiles/main.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/users/ronco/Desktop/thesis_material/symbolic/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/main.dir/nnet.c.o"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/main.dir/nnet.c.o -MF CMakeFiles/main.dir/nnet.c.o.d -o CMakeFiles/main.dir/nnet.c.o -c /mnt/c/users/ronco/Desktop/thesis_material/symbolic/nnet.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/main.dir/nnet.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/main.dir/nnet.c.o -MF CMakeFiles/main.dir/nnet.c.o.d -o CMakeFiles/main.dir/nnet.c.o -c /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/nnet.c
 
 CMakeFiles/main.dir/nnet.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/main.dir/nnet.c.i"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /mnt/c/users/ronco/Desktop/thesis_material/symbolic/nnet.c > CMakeFiles/main.dir/nnet.c.i
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/nnet.c > CMakeFiles/main.dir/nnet.c.i
 
 CMakeFiles/main.dir/nnet.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/main.dir/nnet.c.s"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /mnt/c/users/ronco/Desktop/thesis_material/symbolic/nnet.c -o CMakeFiles/main.dir/nnet.c.s
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/nnet.c -o CMakeFiles/main.dir/nnet.c.s
 
 # Object files for target main
 main_OBJECTS = \
@@ -125,7 +125,7 @@ main: CMakeFiles/main.dir/matrix.c.o
 main: CMakeFiles/main.dir/nnet.c.o
 main: CMakeFiles/main.dir/build.make
 main: CMakeFiles/main.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/mnt/c/users/ronco/Desktop/thesis_material/symbolic/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking C executable main"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking C executable main"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/main.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -137,6 +137,6 @@ CMakeFiles/main.dir/clean:
 .PHONY : CMakeFiles/main.dir/clean
 
 CMakeFiles/main.dir/depend:
-	cd /mnt/c/users/ronco/Desktop/thesis_material/symbolic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /mnt/c/users/ronco/Desktop/thesis_material/symbolic /mnt/c/users/ronco/Desktop/thesis_material/symbolic /mnt/c/users/ronco/Desktop/thesis_material/symbolic/build /mnt/c/users/ronco/Desktop/thesis_material/symbolic/build /mnt/c/users/ronco/Desktop/thesis_material/symbolic/build/CMakeFiles/main.dir/DependInfo.cmake --color=$(COLOR)
+	cd /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/build /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/build /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/build/CMakeFiles/main.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/main.dir/depend
 

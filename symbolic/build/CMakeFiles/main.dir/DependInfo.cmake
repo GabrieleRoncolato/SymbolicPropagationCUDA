@@ -8,9 +8,9 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/mnt/c/users/ronco/Desktop/thesis_material/symbolic/main_new.c" "CMakeFiles/main.dir/main_new.c.o" "gcc" "CMakeFiles/main.dir/main_new.c.o.d"
-  "/mnt/c/users/ronco/Desktop/thesis_material/symbolic/matrix.c" "CMakeFiles/main.dir/matrix.c.o" "gcc" "CMakeFiles/main.dir/matrix.c.o.d"
-  "/mnt/c/users/ronco/Desktop/thesis_material/symbolic/nnet.c" "CMakeFiles/main.dir/nnet.c.o" "gcc" "CMakeFiles/main.dir/nnet.c.o.d"
+  "/mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/main_new.c" "CMakeFiles/main.dir/main_new.c.o" "gcc" "CMakeFiles/main.dir/main_new.c.o.d"
+  "/mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/matrix.c" "CMakeFiles/main.dir/matrix.c.o" "gcc" "CMakeFiles/main.dir/matrix.c.o.d"
+  "/mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/nnet.c" "CMakeFiles/main.dir/nnet.c.o" "gcc" "CMakeFiles/main.dir/nnet.c.o.d"
   )
 
 # Targets to which this target links.

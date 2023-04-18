@@ -8,7 +8,7 @@ int main( int argc, char *argv[])
 
 
     //char *FULL_NET_PATH = "/home/server/Desktop/test/nnet/ACASXU_run2a_1_1_batch_2000.nnet";
-    char *FULL_NET_PATH = "/mnt/c/Users/ronco/Desktop/thesis_material/symbolic/my_nnet/model_new.nnet";
+    char *FULL_NET_PATH = "/mnt/c/Users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/my_nnet/model_new.nnet";
 
     printf("\nLoading model: %s\n", FULL_NET_PATH);
 

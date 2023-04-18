@@ -33,7 +33,7 @@ def multi_area_propagation_gpu(input_domain, net_model, thread_number=8):
 
 	# Import the necessary library for the parallelization (Cupy) and also the c++ CUDA code.
 	import cupy as cp
-	from cuda_code_parallel import cuda_code
+	from cuda_code_symbolic import cuda_code
 
 	# Load network shape, activations and weights
 	layer_sizes = []

@@ -1,7 +1,7 @@
 CMakeFiles/main.dir/matrix.c.o: \
- /mnt/c/users/ronco/Desktop/thesis_material/symbolic/matrix.c \
+ /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/matrix.c \
  /usr/include/stdc-predef.h \
- /mnt/c/users/ronco/Desktop/thesis_material/symbolic/matrix.h \
+ /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/matrix.h \
  /usr/include/stdio.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
  /usr/include/features.h /usr/include/features-time64.h \

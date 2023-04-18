@@ -1,4 +1,4 @@
-# Install script for directory: /mnt/c/users/ronco/Desktop/thesis_material/symbolic
+# Install script for directory: /mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/mnt/c/users/ronco/Desktop/thesis_material/symbolic/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
