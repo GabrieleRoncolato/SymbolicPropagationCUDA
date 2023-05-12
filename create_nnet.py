@@ -93,7 +93,7 @@ if __name__ == "__main__":
         #############################################
 
         # change weights if you want to test a specific example
-        weights = np.array([[1, 3], [1, 2]])
+        weights = np.array([[1, 3, 5], [1, -2, 6]])
         bias = np.array([0, 0])
         model.layers[1].set_weights([weights,bias])
 
@@ -101,14 +101,14 @@ if __name__ == "__main__":
         # bias = np.array([0, 0])
         # model.layers[2].set_weights([weights,bias])
 
-        weights = np.array([[-1], [1]])
+        weights = np.array([[-2], [6]])
         bias = np.array([0])
         model.layers[2].set_weights([weights,bias])
 
     model.save("model.h5")
 
     # Test model with forward propagation
-    print(model(np.array([[2, 5]])))
+    print(model(np.array([[2, 5, 6]])))
 
 
     ##################################
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     weights = [w.T for w in weights]
         
     # name file to convert to .nnet file
-    nnetFile = 'model_new.nnet'
+    nnetFile = 'model.nnet'
 
     # Convert the file
     write_NNet(weights,biases,nnetFile)

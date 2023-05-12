@@ -33,7 +33,7 @@ def multi_area_propagation_gpu(input_domain, net_model, thread_number=8):
 
 	# Import the necessary library for the parallelization (Cupy) and also the c++ CUDA code.
 	import cupy as cp
-	from cuda_code_symbolic import cuda_code
+	from cuda_code_linear_relaxation import cuda_code
 
 	# Load network shape, activations and weights
 	layer_sizes = []
@@ -81,7 +81,7 @@ def multi_area_propagation_gpu(input_domain, net_model, thread_number=8):
 	output_size = int(layer_sizes[-1])
 	
 	# Create and launch the kernel, wait for the sync of all threads
-	kernel_input = (input_domain, len(input_domain), input_size, output_size, layer_sizes, len(layer_sizes), full_weights, full_biases, results_cuda, max_layer_size, activations)
+	kernel_input = (input_domain, len(input_domain), layer_sizes, len(layer_sizes), full_weights, full_biases, results_cuda, max_layer_size, activations)
 	
 	my_kernel((block_number, ), (thread_number, ), kernel_input)
 	cp.cuda.Stream.null.synchronize()
@@ -96,5 +96,5 @@ def multi_area_propagation_gpu(input_domain, net_model, thread_number=8):
 
 
 input_domain = np.array([[1, 5], [4, 6]])
-net_model = tf.keras.models.load_model( "model.h5", compile=False )
+net_model = tf.keras.models.load_model( "model_neg.h5", compile=False )
 print(multi_area_propagation_gpu(input_domain, net_model))

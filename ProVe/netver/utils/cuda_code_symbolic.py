@@ -1,11 +1,8 @@
-cuda_code = '''
+cuda_code_symbolic = '''
 
-extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, int* layer_sizes, int layer_number, float* full_weights, 
+extern "C" __global__ void my_kernel_symbolic(float* input_domain, int input_domain_n, int input_size, int output_size, int* layer_sizes, int layer_number, float* full_weights, 
 			float* full_biases, float* results_cuda, int max_layer_size, int* activations) {
 
-            
-    int input_size = layer_sizes[0];
-    int output_size = layer_sizes[layer_number - 1];
     // Copy global input_domain into local 'input_interval' array
 
     int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
