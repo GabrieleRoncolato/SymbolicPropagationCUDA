@@ -1,4 +1,4 @@
-cuda_code_symbolic = '''
+cuda_code = '''
 
 extern "C" __global__ void my_kernel_symbolic(float* input_domain, int input_domain_n, int input_size, int output_size, int* layer_sizes, int layer_number, float* full_weights, 
 			float* full_biases, float* results_cuda, int max_layer_size, int* activations) {
@@ -9,6 +9,7 @@ extern "C" __global__ void my_kernel_symbolic(float* input_domain, int input_dom
     if (thread_id >= input_domain_n) return;
     int area_start = thread_id * input_size * 2;
 
+    
     float* input_interval = new float[2 * input_size]();
 
     for(int i = 0; i < 2 * input_size; i++){
@@ -44,15 +45,15 @@ extern "C" __global__ void my_kernel_symbolic(float* input_domain, int input_dom
 
     for (int layer = 0; layer < layer_number; layer++) {
 
-        for(int i = 0; i < max_layer_size; i++){
-            for(int j = 0; j < (input_size * 2) + 2; j += 2){
-                new_equation[i * actual_input_size + j] = 0;
-                new_equation[i * actual_input_size + j + 1] = 0;
-            }
-        }
-
-
         if (layer < (layer_number - 1)) {
+            for(int i = 0; i < max_layer_size; i++){
+                for(int j = 0; j < (input_size * 2) + 2; j += 2){
+                    new_equation[i * actual_input_size + j] = 0;
+                    new_equation[i * actual_input_size + j + 1] = 0;
+                }
+            }
+
+
             for (int i = 0; i < layer_sizes[layer + 1]; i++) {
 
                 tempVal_upper = tempVal_lower = 0.0;

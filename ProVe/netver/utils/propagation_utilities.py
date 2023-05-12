@@ -164,7 +164,7 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 	if propagation == 'naive':
 		from netver.utils.cuda_code import cuda_code
 	elif propagation == 'symbolic':
-		from netver.utils.cuda_code_symbolic import cuda_code_symbolic
+		from netver.utils.cuda_code_symbolic import cuda_code
 	else:
 		from netver.utils.cuda_code_linear_relaxation import cuda_code
 
@@ -198,7 +198,7 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 	if propagation == 'naive':
 		my_kernel = cp.RawKernel(cuda_code, 'my_kernel')
 	elif propagation == 'symbolic':
-		my_kernel = cp.RawKernel(cuda_code_symbolic, 'my_kernel_symbolic')
+		my_kernel = cp.RawKernel(cuda_code, 'my_kernel_symbolic')
 	else:
 		my_kernel = cp.RawKernel(cuda_code, 'my_kernel_relaxation')
 
