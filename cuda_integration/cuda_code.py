@@ -17,7 +17,6 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
         //printf("Thread %lu: %lu at index %lu - ", (unsigned long)thread_id, (unsigned long)input_domain[area_start + i], (unsigned long)area_start + i);
     }
 	
-    printf("Start %lu - ", thread_id);
 	// Step 2: starting the propagation cycle
 	int bias_index = 0;
 	int weights_index = 0;

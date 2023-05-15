@@ -34,7 +34,7 @@ extern "C" __global__ void my_kernel_relaxation(float* input_domain, int input_d
     float tempVal_upper, tempVal_lower, tempVal_upper_min, tempVal_lower_max;
     float decrement_upper = 0.0;
 
-    for (int i = 0; i < input_size * 2; i ++) {
+    for (int i = 0; i < input_size; i ++) {
         equation[i * actual_input_size + i * 2] = 1;
         equation[i * actual_input_size + (i * 2) + 1] = 1;
     }
@@ -45,74 +45,73 @@ extern "C" __global__ void my_kernel_relaxation(float* input_domain, int input_d
     int no_overestimation = 1;
 
     //Begin symbolic propagation
-    for (int layer = 0; layer < layer_number; layer++) {
+    for (int layer = 0; layer < layer_number - 1; layer++) {
         
-        if (layer < (layer_number - 1)) {
+        for(int i = 0; i < max_layer_size; i++){
+            for(int j = 0; j < (input_size * 2) + 2; j += 2){
+                new_equation[i * actual_input_size + j] = 0;
+                new_equation[i * actual_input_size + j + 1] = 0;
+            }
+        }
 
-            for(int i = 0; i < max_layer_size; i++){
-                for(int j = 0; j < (input_size * 2) + 2; j += 2){
-                    new_equation[i * actual_input_size + j] = 0;
-                    new_equation[i * actual_input_size + j + 1] = 0;
+        for (int i = 0; i < layer_sizes[layer + 1]; i++) {
+
+            tempVal_upper = tempVal_lower = tempVal_upper_min = tempVal_lower_max = 0.0;
+
+            for (int j = 0; j < layer_sizes[layer]; j++) {
+                for (int k = 0; k < actual_input_size; k += 2) {
+                    
+                    if (full_weights[weights_index] >= 0) {
+                        new_equation[i * actual_input_size + k + 1] += equation[j * actual_input_size + k + 1] * full_weights[weights_index];
+                        new_equation[i * actual_input_size + k] += equation[j * actual_input_size + k] * full_weights[weights_index];
+                    }
+                    else {
+                        new_equation[i * actual_input_size + k + 1] += equation[j * actual_input_size + k] * full_weights[weights_index];
+                        new_equation[i * actual_input_size + k] += equation[j * actual_input_size + k + 1] * full_weights[weights_index];
+                    }
+                }
+
+                weights_index += 1;
+            }
+
+            for (int k = 0; k < input_size * 2; k += 2) {
+                if (new_equation[i * actual_input_size + k] >= 0) {
+                    tempVal_lower += new_equation[i * actual_input_size + k] * input_interval[k];
+                    tempVal_lower_max += new_equation[i * actual_input_size + k] * input_interval[k + 1];
+                }
+                else {
+                    tempVal_lower += new_equation[i * actual_input_size + k] * input_interval[k + 1];
+                    tempVal_lower_max += new_equation[i * actual_input_size + k] * input_interval[k];
+                }
+
+                if (new_equation[i * actual_input_size + k + 1] >= 0) {
+                    tempVal_upper += new_equation[i * actual_input_size + k + 1] * input_interval[k + 1];
+                    tempVal_upper_min += new_equation[i * actual_input_size + k + 1] * input_interval[k];
+                }
+                else {
+                    tempVal_upper += new_equation[i * actual_input_size + k + 1] * input_interval[k];
+                    tempVal_upper_min += new_equation[i * actual_input_size + k + 1] * input_interval[k + 1];
                 }
             }
 
-            for (int i = 0; i < layer_sizes[layer + 1]; i++) {
+            new_equation[i * actual_input_size + input_size * 2] += full_biases[bias_index];
+            new_equation[i * actual_input_size + (input_size * 2) + 1] += full_biases[bias_index];
+            
+            bias_index += 1;
 
-                tempVal_upper = tempVal_lower = tempVal_upper_min = tempVal_lower_max = 0.0;
+            tempVal_lower += new_equation[i * actual_input_size + input_size * 2];
+            tempVal_lower_max += new_equation[i * actual_input_size + input_size * 2];
 
-                for (int j = 0; j < layer_sizes[layer]; j++) {
-                    for (int k = 0; k < actual_input_size; k += 2) {
-                        
-                        if (full_weights[weights_index] >= 0) {
-                            new_equation[i * actual_input_size + k + 1] += equation[j * actual_input_size + k + 1] * full_weights[weights_index];
-                            new_equation[i * actual_input_size + k] += equation[j * actual_input_size + k] * full_weights[weights_index];
-                        }
-                        else {
-                            new_equation[i * actual_input_size + k + 1] += equation[j * actual_input_size + k] * full_weights[weights_index];
-                            new_equation[i * actual_input_size + k] += equation[j * actual_input_size + k + 1] * full_weights[weights_index];
-                        }
-                    }
+            tempVal_upper += new_equation[i * actual_input_size + (input_size * 2) + 1];
 
-                    weights_index += 1;
-                }
+            tempVal_upper_min += new_equation[i * actual_input_size + (input_size * 2) + 1];
 
-                for (int k = 0; k < input_size * 2; k += 2) {
-                    if (new_equation[i * actual_input_size + k] >= 0) {
-                        tempVal_lower += new_equation[i * actual_input_size + k] * input_interval[k];
-                        tempVal_lower_max += new_equation[i * actual_input_size + k] * input_interval[k + 1];
-                    }
-                    else {
-                        tempVal_lower += new_equation[i * actual_input_size + k] * input_interval[k + 1];
-                        tempVal_lower_max += new_equation[i * actual_input_size + k] * input_interval[k];
-                    }
+            //linear relaxation of RELU
 
-                    if (new_equation[i * actual_input_size + k + 1] >= 0) {
-                        tempVal_upper += new_equation[i * actual_input_size + k + 1] * input_interval[k + 1];
-                        tempVal_upper_min += new_equation[i * actual_input_size + k + 1] * input_interval[k];
-                    }
-                    else {
-                        tempVal_upper += new_equation[i * actual_input_size + k + 1] * input_interval[k];
-                        tempVal_upper_min += new_equation[i * actual_input_size + k + 1] * input_interval[k + 1];
-                    }
-                }
-
-                new_equation[i * actual_input_size + input_size * 2] += full_biases[bias_index];
-                new_equation[i * actual_input_size + (input_size * 2) + 1] += full_biases[bias_index];
-                
-                bias_index += 1;
-
-                tempVal_lower += new_equation[i * actual_input_size + input_size * 2];
-                tempVal_lower_max += new_equation[i * actual_input_size + input_size * 2];
-
-                tempVal_upper += new_equation[i * actual_input_size + (input_size * 2) + 1];
-
-                tempVal_upper_min += new_equation[i * actual_input_size + (input_size * 2) + 1];
-
-                //linear relaxation of RELU
-
+            if (layer < (layer_number - 2)) {
                 //all information is lost, concretize both equations to 0
                 if (tempVal_upper <= 0.0) {
-
+                
                     tempVal_upper = 0.0;
                     tempVal_lower = 0.0;
 
@@ -122,7 +121,7 @@ extern "C" __global__ void my_kernel_relaxation(float* input_domain, int input_d
                     }
                 }
                 // layers subsequent to the first instance of an overestimated node, information is partially lost, apply linear relaxation for subsequent layer case (lower equation and upper equation are potentially different)
-                else if(no_overestimation == 0 && tempVal_lower <= 0){
+                /*else if(no_overestimation == 0 && tempVal_lower <= 0){
                 
                     float relaxation_lower = tempVal_upper / (tempVal_upper - tempVal_lower_max);
                     float relaxation_upper = tempVal_upper_min / (tempVal_upper_min - tempVal_lower);
@@ -159,16 +158,15 @@ extern "C" __global__ void my_kernel_relaxation(float* input_domain, int input_d
                     }
                     //relax lower, maintain upper
                     else if(tempVal_lower <= 0 && tempVal_lower_max <= 0 && tempVal_upper_min > 0 && tempVal_upper > 0){
-                        
                         for(int k = 0; k < (input_size * 2); k += 2){
                             new_equation[i * actual_input_size + k] *= relaxation_lower;
                         }
                     }
                     
-                }
+                }*/
                 // first layer containing overestimated nodes, information is partially lost, apply linear relaxation for the first layer case (lower equation and upper equation are equal)
                 else if(tempVal_lower < 0.0){ 
-
+                
                     float relaxation = tempVal_upper / (tempVal_upper - tempVal_lower);
 
                     for(int k = 0; k < (input_size * 2); k += 2){
@@ -181,9 +179,7 @@ extern "C" __global__ void my_kernel_relaxation(float* input_domain, int input_d
                     no_overestimation = 0;
                 }
             }
-        }
-        else {
-            for (int i = 0; i < layer_sizes[layer]; i++) {
+            else {
                 output_interval[(i * 2) + 1] = tempVal_upper - decrement_upper;
                 output_interval[i * 2] = tempVal_lower;
             }

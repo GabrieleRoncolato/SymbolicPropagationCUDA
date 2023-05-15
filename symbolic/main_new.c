@@ -139,8 +139,8 @@ int main( int argc, char *argv[])
                 if (tempVal_lower < 0.0) {
                     tempVal_lower = 0.0;
 
-                    memset(new_equation_upper[i], 0,sizeof(float)*(inputSize+1));
-                    memset(new_equation_lower[i], 0,sizeof(float)*(inputSize+1));
+                    memset(new_equation_upper[i], 0, sizeof(float)*(inputSize+1));
+                    memset(new_equation_lower[i], 0, sizeof(float)*(inputSize+1));
 
                     new_equation_upper[i][inputSize] = tempVal_upper;
                 }
@@ -148,7 +148,7 @@ int main( int argc, char *argv[])
                 if (tempVal_upper < 0.0){
                     tempVal_upper = 0.0;
 
-                    memset(new_equation_upper[i], 0,sizeof(float)*(inputSize+1));
+                    memset(new_equation_upper[i], 0, sizeof(float)*(inputSize+1));
                     memset(new_equation_lower[i], 0, sizeof(float)*(inputSize+1));
                 }
             }

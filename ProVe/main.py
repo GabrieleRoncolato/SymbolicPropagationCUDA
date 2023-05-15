@@ -6,14 +6,14 @@ import time
 from netver.utils.colors import bcolors
 from netver.verifier import NetVer
 
-model_name = "model_2_20.h5"
+model_name = "model_old.h5"
 model_path = "models_h5"
 log = True
 
 # safety property
 property = {
     "type" : "positive",
-    "P" : [[0., 1.], [0., 1.], [0., 1.], [0., 1.], [0., 1.]],
+    "P" : [[0., 1.], [0., 1.]],
 }
 
 
@@ -48,7 +48,6 @@ def run_prover(propagation, model_str, property):
     sat, info = netver.run_verifier( verbose )
     end = time.time()
 
-   
     if sat:
         print( bcolors.OKGREEN + "\nThe property is SAT!")
         print( f"\tTime execution: {round((end-start)/60,5)} min\n"+ bcolors.ENDC )
@@ -62,7 +61,7 @@ def run_prover(propagation, model_str, property):
 
 if __name__ == "__main__":
     sat_naive, input_size_naive, time_execution_naive, violation_rate_naive = run_prover("naive", f"{model_path}/{model_name}", property)
-    sat_relax, input_size_relax, time_execution_relax, violation_rate_relax = run_prover("relaxation", f"{model_path}/{model_name}", property)
+    sat_relax, input_size_relax, time_execution_relax, violation_rate_relax = run_prover("symbolic", f"{model_path}/{model_name}", property)
 
     if log:
         if not os.path.exists("./logs"):

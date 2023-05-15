@@ -134,6 +134,8 @@ class ProVe( ):
 			test_bound = self._propagation_method( test_domain, self.network, self.interval_propagation )
 			test_bound_dual = self._propagation_method( test_domain, self.dual_network, self.interval_propagation )
 
+			#print(test_bound)
+
 			# Call the verifier (N(x) >= 0) on all the subareas
 			unknown_id, violated_id, proved_id = self._complete_verifier( test_bound, test_bound_dual )
 

@@ -2,16 +2,16 @@ cuda_code = '''
 
 extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, int* layer_sizes, int layer_number, float* full_weights, 
 			float* full_biases, float* results_cuda, int max_layer_size, int* activations) {
-
             
     int input_size = layer_sizes[0];
     int output_size = layer_sizes[layer_number - 1];
+
     // Copy global input_domain into local 'input_interval' array
 
     int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
     if (thread_id >= input_domain_n) return;
     int area_start = thread_id * input_size * 2;
-
+    
     float* input_interval = new float[2 * input_size]();
 
     for(int i = 0; i < 2 * input_size; i++){
@@ -35,7 +35,7 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
 
     float tempVal_upper, tempVal_lower;
 
-    for (int i = 0; i < input_size * 2; i ++) {
+    for (int i = 0; i < input_size; i ++) {
         equation[i * actual_input_size + i * 2] = 1;
         equation[i * actual_input_size + (i * 2) + 1] = 1;
     }
@@ -44,9 +44,8 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
     int weights_index = 0;
 
     //Begin symbolic propagation
-
-    for (int layer = 0; layer < layer_number; layer++) {
-
+    for (int layer = 0; layer < layer_number - 1; layer++) {
+        
         for(int i = 0; i < max_layer_size; i++){
             for(int j = 0; j < (input_size * 2) + 2; j += 2){
                 new_equation[i * actual_input_size + j] = 0;
@@ -54,52 +53,53 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
             }
         }
 
+        for (int i = 0; i < layer_sizes[layer + 1]; i++) {
 
-        if (layer < (layer_number - 1)) {
-            for (int i = 0; i < layer_sizes[layer + 1]; i++) {
+            tempVal_upper = tempVal_lower = 0.0;
 
-                tempVal_upper = tempVal_lower = 0.0;
-
-                for (int j = 0; j < layer_sizes[layer]; j++) {
-                    for (int k = 0; k < actual_input_size; k += 2) {
-                        
-                        if (full_weights[weights_index] >= 0) {
-                            new_equation[i * actual_input_size + k + 1] += equation[j * actual_input_size + k + 1] * full_weights[weights_index];
-                            new_equation[i * actual_input_size + k] += equation[j * actual_input_size + k] * full_weights[weights_index];
-                        }
-                        else {
-                            new_equation[i * actual_input_size + k + 1] += equation[j * actual_input_size + k] * full_weights[weights_index];
-                            new_equation[i * actual_input_size + k] += equation[j * actual_input_size + k + 1] * full_weights[weights_index];
-                        }
-                    }
-
-                    weights_index += 1;
-                }
-
-                for (int k = 0; k < input_size * 2; k += 2) {
-                    if (new_equation[i * actual_input_size + k] >= 0) {
-                        tempVal_lower += new_equation[i * actual_input_size + k] * input_interval[k];
+            for (int j = 0; j < layer_sizes[layer]; j++) {
+                for (int k = 0; k < actual_input_size; k += 2) {
+                    
+                    if (full_weights[weights_index] >= 0) {
+                        new_equation[i * actual_input_size + k + 1] += equation[j * actual_input_size + k + 1] * full_weights[weights_index];
+                        new_equation[i * actual_input_size + k] += equation[j * actual_input_size + k] * full_weights[weights_index];
                     }
                     else {
-                        tempVal_lower += new_equation[i * actual_input_size + k] * input_interval[k + 1];
-                    }
-
-                    if (new_equation[i * actual_input_size + k + 1] >= 0) {
-                        tempVal_upper += new_equation[i * actual_input_size + k + 1] * input_interval[k + 1];
-                    }
-                    else {
-                        tempVal_upper += new_equation[i * actual_input_size + k + 1] * input_interval[k];
+                        new_equation[i * actual_input_size + k + 1] += equation[j * actual_input_size + k] * full_weights[weights_index];
+                        new_equation[i * actual_input_size + k] += equation[j * actual_input_size + k + 1] * full_weights[weights_index];
                     }
                 }
 
-                new_equation[i * actual_input_size + input_size * 2] += full_biases[bias_index];
-                new_equation[i * actual_input_size + (input_size * 2) + 1] += full_biases[bias_index];
-                
-                bias_index += 1;
+                weights_index += 1;
+            }
 
-                tempVal_lower += new_equation[i * actual_input_size + input_size * 2];
-                tempVal_upper += new_equation[i * actual_input_size + (input_size * 2) + 1];
+            for (int k = 0; k < input_size * 2; k += 2) {
+                if (new_equation[i * actual_input_size + k] >= 0) {
+                    tempVal_lower += new_equation[i * actual_input_size + k] * input_interval[k];
+                }
+                else {
+                    tempVal_lower += new_equation[i * actual_input_size + k] * input_interval[k + 1];
+                }
 
+                if (new_equation[i * actual_input_size + k + 1] >= 0) {
+                    tempVal_upper += new_equation[i * actual_input_size + k + 1] * input_interval[k + 1];
+                }
+                else {
+                    tempVal_upper += new_equation[i * actual_input_size + k + 1] * input_interval[k];
+                }
+            }
+
+            new_equation[i * actual_input_size + input_size * 2] += full_biases[bias_index];
+            new_equation[i * actual_input_size + (input_size * 2) + 1] += full_biases[bias_index];
+            
+            bias_index += 1;
+
+            tempVal_lower += new_equation[i * actual_input_size + input_size * 2];
+            tempVal_upper += new_equation[i * actual_input_size + (input_size * 2) + 1];
+
+            //concretization of RELU
+
+            if (layer < (layer_number - 2)) {
                 if (tempVal_lower < 0.0) {
                     tempVal_lower = 0.0;
 
@@ -120,16 +120,14 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
                     }
                 }
             }
-        }
-        else {
-            for (int i = 0; i < layer_sizes[layer]; i++) {
+            else {
                 output_interval[(i * 2) + 1] = tempVal_upper;
                 output_interval[i * 2] = tempVal_lower;
             }
         }
 
         for(int i = 0; i < max_layer_size; i++){
-            for(int j = 0; j < (2 * input_size) + 2; j += 2){
+            for(int j = 0; j < actual_input_size; j += 2){
                 equation[i * actual_input_size + j] = new_equation[i * actual_input_size + j];
                 equation[i * actual_input_size + j + 1] = new_equation[i * actual_input_size + j + 1];
             }

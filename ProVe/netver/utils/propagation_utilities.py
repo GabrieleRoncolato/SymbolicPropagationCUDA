@@ -226,6 +226,8 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 
 	my_kernel((block_number, ), (thread_number, ), kernel_input)
 	cp.cuda.Stream.null.synchronize()
+
+	#print(results_cuda)
 	
 
 	# Reshape the results and convert in numpy array
