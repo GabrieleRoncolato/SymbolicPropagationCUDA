@@ -1,4 +1,4 @@
 NAIVE
-The property is UNSAT!	Input size: 2	Violation rate: 55.444%	Time execution: 0.01088 min
+The property is SAT!	Time execution: 0.00757 min
 SYMBOLIC LINEAR RELAXATION
-The property is UNSAT!	Input size: 2	Violation rate: 0.396%	Time execution: 0.00478 min
+The property is SAT!	Time execution: 0.00037 min

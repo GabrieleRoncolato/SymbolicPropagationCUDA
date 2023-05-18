@@ -1,7 +1,10 @@
 cuda_code = '''
 
-extern "C" __global__ void my_kernel_symbolic(float* input_domain, int input_domain_n, int input_size, int output_size, int* layer_sizes, int layer_number, float* full_weights, 
+extern "C" __global__ void my_kernel_symbolic(float* input_domain, int input_domain_n, int* layer_sizes, int layer_number, float* full_weights, 
 			float* full_biases, float* results_cuda, int max_layer_size, int* activations) {
+            
+    int input_size = layer_sizes[0];
+    int output_size = layer_sizes[layer_number - 1];
 
     // Copy global input_domain into local 'input_interval' array
 
@@ -56,7 +59,6 @@ extern "C" __global__ void my_kernel_symbolic(float* input_domain, int input_dom
 
             for (int j = 0; j < layer_sizes[layer]; j++) {
                 for (int k = 0; k < actual_input_size; k += 2) {
-                    
                     if (full_weights[weights_index] >= 0) {
                         new_equation[i * actual_input_size + k + 1] += equation[j * actual_input_size + k + 1] * full_weights[weights_index];
                         new_equation[i * actual_input_size + k] += equation[j * actual_input_size + k] * full_weights[weights_index];
@@ -97,29 +99,31 @@ extern "C" __global__ void my_kernel_symbolic(float* input_domain, int input_dom
             //concretization of RELU
 
             if (layer < (layer_number - 2)) {
-                if (tempVal_lower < 0.0) {
-                    tempVal_lower = 0.0;
+                if(activations[layer] == 1){
+                    if (tempVal_lower < 0.0) {
+                        tempVal_lower = 0.0;
 
-                    for(int k = 0; k < (input_size * 2) + 2; k += 2){
-                        new_equation[i * actual_input_size + k] = 0;
-                        new_equation[i * actual_input_size + k + 1] = 0;
+                        for(int k = 0; k < (input_size * 2) + 2; k += 2){
+                            new_equation[i * actual_input_size + k] = 0;
+                            new_equation[i * actual_input_size + k + 1] = 0;
+                        }
+
+                        new_equation[i * actual_input_size + (input_size * 2) + 1] = tempVal_upper;
                     }
 
-                    new_equation[i * actual_input_size + (input_size * 2) + 1] = tempVal_upper;
-                }
+                    if (tempVal_upper < 0.0){
+                        tempVal_upper = 0.0;
 
-                if (tempVal_upper < 0.0){
-                    tempVal_upper = 0.0;
-
-                    for(int k = 0; k < (input_size * 2) + 2; k += 2){
-                        new_equation[i * actual_input_size + k] = 0;
-                        new_equation[i * actual_input_size + k + 1] = 0;
+                        for(int k = 0; k < (input_size * 2) + 2; k += 2){
+                            new_equation[i * actual_input_size + k] = 0;
+                            new_equation[i * actual_input_size + k + 1] = 0;
+                        }
                     }
                 }
             }
             else {
-                output_interval[(i * 2) + 1] = tempVal_upper;
                 output_interval[i * 2] = tempVal_lower;
+                output_interval[(i * 2) + 1] = tempVal_upper;
             }
         }
 
@@ -135,8 +139,11 @@ extern "C" __global__ void my_kernel_symbolic(float* input_domain, int input_dom
     int results_start = thread_id * output_size * 2;
 
     for (int i = 0; i < output_size * 2; i++){
+        //printf("%f ", output_interval[i]);
         results_cuda[results_start + i] = output_interval[i];
     }
+
+    //printf(" - ");
 
     //Deallocate memory
     delete[] input_interval;

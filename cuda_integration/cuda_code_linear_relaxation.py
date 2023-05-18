@@ -5,9 +5,6 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
 
     // Copy global input_domain into local 'input_interval' array
 
-    int input_size = layer_sizes[0];
-    int output_size = layer_sizes[layer_number - 1];
-
     int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
     if (thread_id >= input_domain_n) return;
     int area_start = thread_id * input_size * 2;
@@ -112,74 +109,76 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
             //linear relaxation of RELU
 
             if (layer < (layer_number - 2)) {
-                //all information is lost, concretize both equations to 0
-                if (tempVal_upper <= 0.0) {
-                
-                    tempVal_upper = 0.0;
-                    tempVal_lower = 0.0;
-
-                    for(int k = 0; k < actual_input_size; k += 2){
-                        new_equation[i * actual_input_size + k] = 0;
-                        new_equation[i * actual_input_size + k + 1] = 0;
-                    }
-                }
-                // layers subsequent to the first instance of an overestimated node, information is partially lost, apply linear relaxation for subsequent layer case (lower equation and upper equation are potentially different)
-                /*else if(no_overestimation == 0 && tempVal_lower <= 0){
-                
-                    float relaxation_lower = tempVal_upper / (tempVal_upper - tempVal_lower_max);
-                    float relaxation_upper = tempVal_upper_min / (tempVal_upper_min - tempVal_lower);
-
-                    //concretize lower to 0, relax upper
-                    if(tempVal_lower <= 0 && tempVal_lower_max <= 0 && tempVal_upper_min <= 0 && tempVal_upper > 0){
+                if(activations[layer] == 1){
+                    //all information is lost, concretize both equations to 0
+                    if (tempVal_upper <= 0.0) {
                     
-                        for(int k = 0; k < (input_size * 2); k += 2){
+                        tempVal_upper = 0.0;
+                        tempVal_lower = 0.0;
+
+                        for(int k = 0; k < actual_input_size; k += 2){
                             new_equation[i * actual_input_size + k] = 0;
-                            new_equation[i * actual_input_size + k + 1] *= relaxation_upper;
+                            new_equation[i * actual_input_size + k + 1] = 0;
                         }
-
-                        new_equation[i * actual_input_size + (input_size * 2)] = 0;
-                        new_equation[i * actual_input_size + (input_size * 2) + 1] -= (tempVal_lower_max * relaxation_upper);
                     }
-                    //concretize lower to 0, maintain upper
-                    else if(tempVal_lower <= 0 && tempVal_lower_max <= 0 && tempVal_upper_min > 0 && tempVal_upper > 0){
+                    // layers subsequent to the first instance of an overestimated node, information is partially lost, apply linear relaxation for subsequent layer case (lower equation and upper equation are potentially different)
+                    /*else if(no_overestimation == 0 && tempVal_lower <= 0){
                     
+                        float relaxation_lower = tempVal_upper / (tempVal_upper - tempVal_lower_max);
+                        float relaxation_upper = tempVal_upper_min / (tempVal_upper_min - tempVal_lower);
+
+                        //concretize lower to 0, relax upper
+                        if(tempVal_lower <= 0 && tempVal_lower_max <= 0 && tempVal_upper_min <= 0 && tempVal_upper > 0){
+                        
+                            for(int k = 0; k < (input_size * 2); k += 2){
+                                new_equation[i * actual_input_size + k] = 0;
+                                new_equation[i * actual_input_size + k + 1] *= relaxation_upper;
+                            }
+
+                            new_equation[i * actual_input_size + (input_size * 2)] = 0;
+                            new_equation[i * actual_input_size + (input_size * 2) + 1] -= (tempVal_lower_max * relaxation_upper);
+                        }
+                        //concretize lower to 0, maintain upper
+                        else if(tempVal_lower <= 0 && tempVal_lower_max <= 0 && tempVal_upper_min > 0 && tempVal_upper > 0){
+                        
+                            for(int k = 0; k < (input_size * 2); k += 2){
+                                new_equation[i * actual_input_size + k] = 0;
+                            }
+                                                    
+                            new_equation[i * actual_input_size + (input_size * 2)] = 0;
+                        }
+                        //relax lower, relax upper
+                        else if(tempVal_lower <= 0 && tempVal_lower_max > 0 && tempVal_upper_min <= 0 && tempVal_upper > 0){
+                        
+                            for(int k = 0; k < (input_size * 2); k += 2){
+                                new_equation[i * actual_input_size + k] *= relaxation_lower;
+                                new_equation[i * actual_input_size + k + 1] *= relaxation_upper;
+                            }
+                        
+                            new_equation[i * actual_input_size + (input_size * 2) + 1] -= (tempVal_lower_max * relaxation_upper);
+                        }
+                        //relax lower, maintain upper
+                        else if(tempVal_lower <= 0 && tempVal_lower_max <= 0 && tempVal_upper_min > 0 && tempVal_upper > 0){
+                            for(int k = 0; k < (input_size * 2); k += 2){
+                                new_equation[i * actual_input_size + k] *= relaxation_lower;
+                            }
+                        }
+                        
+                    }*/
+                    // first layer containing overestimated nodes, information is partially lost, apply linear relaxation for the first layer case (lower equation and upper equation are equal)
+                    else if(tempVal_lower < 0.0){ 
+                    
+                        float relaxation = tempVal_upper / (tempVal_upper - tempVal_lower);
+
                         for(int k = 0; k < (input_size * 2); k += 2){
-                            new_equation[i * actual_input_size + k] = 0;
+                            new_equation[i * actual_input_size + k] *= relaxation;
+                            new_equation[i * actual_input_size + k + 1] *= relaxation;
                         }
-                                                
-                        new_equation[i * actual_input_size + (input_size * 2)] = 0;
-                    }
-                    //relax lower, relax upper
-                    else if(tempVal_lower <= 0 && tempVal_lower_max > 0 && tempVal_upper_min <= 0 && tempVal_upper > 0){
-                    
-                        for(int k = 0; k < (input_size * 2); k += 2){
-                            new_equation[i * actual_input_size + k] *= relaxation_lower;
-                            new_equation[i * actual_input_size + k + 1] *= relaxation_upper;
-                        }
-                    
-                        new_equation[i * actual_input_size + (input_size * 2) + 1] -= (tempVal_lower_max * relaxation_upper);
-                    }
-                    //relax lower, maintain upper
-                    else if(tempVal_lower <= 0 && tempVal_lower_max <= 0 && tempVal_upper_min > 0 && tempVal_upper > 0){
-                        for(int k = 0; k < (input_size * 2); k += 2){
-                            new_equation[i * actual_input_size + k] *= relaxation_lower;
-                        }
-                    }
-                    
-                }*/
-                // first layer containing overestimated nodes, information is partially lost, apply linear relaxation for the first layer case (lower equation and upper equation are equal)
-                else if(tempVal_lower < 0.0){ 
-                
-                    float relaxation = tempVal_upper / (tempVal_upper - tempVal_lower);
 
-                    for(int k = 0; k < (input_size * 2); k += 2){
-                        new_equation[i * actual_input_size + k] *= relaxation;
-                        new_equation[i * actual_input_size + k + 1] *= relaxation;
+                        new_equation[i * actual_input_size + (input_size * 2) + 1] -= (tempVal_lower * relaxation);
+
+                        no_overestimation = 0;
                     }
-
-                    new_equation[i * actual_input_size + (input_size * 2) + 1] -= (tempVal_lower * relaxation);
-
-                    no_overestimation = 0;
                 }
             }
             else {

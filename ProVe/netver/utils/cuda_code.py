@@ -59,7 +59,11 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
 
 	// Step 3: copy the local output layer in the global 'results_cuda' array
 	int results_start = thread_id * layer_sizes[layer_number - 1] * 2;
-	for (int i=0; i < layer_sizes[layer_number - 1] * 2; i++) results_cuda[results_start + i] = old_layer_values[i];
+	for (int i=0; i < layer_sizes[layer_number - 1] * 2; i++) {
+        //printf("%f ", old_layer_values[i]);
+    	results_cuda[results_start + i] = old_layer_values[i];
+    }
+    //printf(" - ");
 	// Free memory
 	delete[] old_layer_values;
 	delete[] new_layer_values;        

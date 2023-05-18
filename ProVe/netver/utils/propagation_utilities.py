@@ -213,25 +213,22 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 	
 	# Define the number of CUDA block
 	block_number = int(len(input_domain) / thread_number) + 1
-
-	# Create and launch the kernel, wait for the sync of all threads
-	input_size = int(layer_sizes[0])
-	output_size = int(layer_sizes[-1])
 	
 	# Create and launch the kernel, wait for the sync of all threads
-	if propagation == 'naive':
-		kernel_input = (input_domain, len(input_domain), layer_sizes, len(layer_sizes), full_weights, full_biases, results_cuda, max_layer_size, activations)
-	else:
-		kernel_input = (input_domain, len(input_domain), input_size, output_size, layer_sizes, len(layer_sizes), full_weights, full_biases, results_cuda, max_layer_size, activations)
+	kernel_input = (input_domain, len(input_domain), layer_sizes, len(layer_sizes), full_weights, full_biases, results_cuda, max_layer_size, activations)
 
 	my_kernel((block_number, ), (thread_number, ), kernel_input)
 	cp.cuda.Stream.null.synchronize()
 
-	#print(results_cuda)
 	
 
 	# Reshape the results and convert in numpy array
 	reshaped_bound = cp.asnumpy(results_cuda).reshape((len(input_domain), net_model.layers[-1].output_shape[1], 2))
+
+	
+	#print(reshaped_bound)
+
+	#print(reshaped_bound)
 
 	return reshaped_bound
 

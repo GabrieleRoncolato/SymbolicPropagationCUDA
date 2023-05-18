@@ -130,6 +130,15 @@ class ProVe( ):
 			# Reshape the areas matrix in the form (N, input_number, 2)
 			test_domain = areas_matrix.reshape(-1, self.P.shape[0], 2)
 
+			if cycle == self.time_out_cycle - 1:
+
+				with open(f"prove_{self.interval_propagation}.txt", 'w') as outfile:
+					outfile.write('# Array shape: {0}\n'.format(test_domain.shape))
+
+					for data_slice in test_domain:
+						np.savetxt(outfile, data_slice, fmt='%-7.2f')						
+						outfile.write('# New slice\n')
+
 			# Call the propagation method to obtain the output bound from the input area (primal and dual)
 			test_bound = self._propagation_method( test_domain, self.network, self.interval_propagation )
 			test_bound_dual = self._propagation_method( test_domain, self.dual_network, self.interval_propagation )
