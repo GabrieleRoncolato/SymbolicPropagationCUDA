@@ -1,0 +1,71 @@
+Checking input: [[0.1, 0.15], [0.2, 0.3], [0.7, 0.8], [0.9, 0.95], [0.9, 1.0]]
+Iteration cycle   0 of  40 (checked  0.000%)
+Violation rate: 0
+Iteration cycle   1 of  40 (checked  0.000%)
+Violation rate: 0
+Iteration cycle   2 of  40 (checked  0.000%)
+Violation rate: 0
+Iteration cycle   3 of  40 (checked  0.000%)
+Violation rate: 0
+Iteration cycle   4 of  40 (checked  0.000%)
+Violation rate: 1
+Iteration cycle   5 of  40 (checked  6.250%)
+Violation rate: 1
+Iteration cycle   6 of  40 (checked  9.375%)
+Violation rate: 15
+Iteration cycle   7 of  40 (checked  32.812%)
+Violation rate: 18
+Iteration cycle   8 of  40 (checked  46.875%)
+Violation rate: 23
+Iteration cycle   9 of  40 (checked  55.859%)
+Violation rate: 24
+Iteration cycle  10 of  40 (checked  60.742%)
+Violation rate: 28
+Iteration cycle  11 of  40 (checked  63.477%)
+Violation rate: 37
+Iteration cycle  12 of  40 (checked  65.430%)
+Violation rate: 338
+Iteration cycle  13 of  40 (checked  75.049%)
+Violation rate: 344
+Iteration cycle  14 of  40 (checked  80.396%)
+Violation rate: 445
+Iteration cycle  15 of  40 (checked  84.204%)
+Violation rate: 530
+Iteration cycle  16 of  40 (checked  86.539%)
+Violation rate: 1014
+Iteration cycle  17 of  40 (checked  88.838%)
+Violation rate: 1089
+Iteration cycle  18 of  40 (checked  90.078%)
+Violation rate: 1286
+Iteration cycle  19 of  40 (checked  90.825%)
+Violation rate: 1187
+Iteration cycle  20 of  40 (checked  91.166%)
+Violation rate: 10866
+Iteration cycle  21 of  40 (checked  92.899%)
+Violation rate: 13720
+Iteration cycle  22 of  40 (checked  93.996%)
+Violation rate: 24463
+Iteration cycle  23 of  40 (checked  94.999%)
+Violation rate: 28396
+Iteration cycle  24 of  40 (checked  95.576%)
+Violation rate: 18258
+Iteration cycle  25 of  40 (checked  95.763%)
+Violation rate: 200875
+Iteration cycle  26 of  40 (checked  96.856%)
+Violation rate: 256997
+Iteration cycle  27 of  40 (checked  97.564%)
+Violation rate: 445476
+Iteration cycle  28 of  40 (checked  98.188%)
+Violation rate: 526556
+Iteration cycle  29 of  40 (checked  98.564%)
+Violation rate: 228126
+Iteration cycle  30 of  40 (checked  98.645%)
+Violation rate: 2908638
+Iteration cycle  31 of  40 (checked  99.173%)
+Violation rate: 3767066
+Iteration cycle  32 of  40 (checked  99.517%)
+Violation rate: 6444117
+The property is UNSAT!
+Input size: 5
+Violation rate: 89.929
+Time execution: 17.1022 min

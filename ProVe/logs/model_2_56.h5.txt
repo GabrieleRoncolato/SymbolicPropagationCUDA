@@ -1,4 +1,0 @@
-NAIVE
-The property is SAT!	Time execution: 0.00757 min
-SYMBOLIC LINEAR RELAXATION
-The property is SAT!	Time execution: 0.00037 min

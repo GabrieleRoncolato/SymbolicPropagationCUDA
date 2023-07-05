@@ -151,9 +151,6 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 			the propagated bound in the same format of the input domain (3-dim)
 	"""
 
-	
-	#print(input_domain)
-
 	# Ignore the standard warning from CuPy
 	import warnings
 	warnings.filterwarnings("ignore")
@@ -208,28 +205,28 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 	layer_sizes = cp.array(layer_sizes, dtype=cp.int32)
 	activations = cp.array(activations, dtype=cp.int32)
 	input_domain = cp.array(input_domain, dtype=cp.float32)
+	gradients = cp.zeros((max_layer_size * 2) * len(input_domain), dtype=cp.float32)
+
 	full_weights = cp.array(full_weights, dtype=cp.float32)
 	full_biases = cp.array(full_biases, dtype=cp.float32)
 	
 	# Define the number of CUDA block
 	block_number = int(len(input_domain) / thread_number) + 1
-	
+
 	# Create and launch the kernel, wait for the sync of all threads
-	kernel_input = (input_domain, len(input_domain), layer_sizes, len(layer_sizes), full_weights, full_biases, results_cuda, max_layer_size, activations)
+
+	kernel_input = (input_domain, len(input_domain), layer_sizes, len(layer_sizes), full_weights, full_biases, results_cuda, max_layer_size, activations, gradients)
 
 	my_kernel((block_number, ), (thread_number, ), kernel_input)
+
 	cp.cuda.Stream.null.synchronize()
 
-	
+	#print(gradients)
 
 	# Reshape the results and convert in numpy array
 	reshaped_bound = cp.asnumpy(results_cuda).reshape((len(input_domain), net_model.layers[-1].output_shape[1], 2))
+	gradients = gradients.reshape(-1, (max_layer_size * 2))
 
-	
-	#print(reshaped_bound)
-
-	#print(reshaped_bound)
-
-	return reshaped_bound
+	return reshaped_bound, gradients
 
 	

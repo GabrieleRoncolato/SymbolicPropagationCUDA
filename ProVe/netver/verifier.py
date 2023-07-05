@@ -76,7 +76,7 @@ class NetVer:
 		self.verifier = self.algorithms_dictionary[algo]( self.primal_network, np.array(property["P"]), self.dual_network, **kwargs )
 
 		
-	def run_verifier( self, verbose=0 ):
+	def run_verifier( self, verbose=0, log_file=None ):
 
 		"""
 		Method that perform the formal analysis, launching the object verifier setted in the constructor.
@@ -97,7 +97,7 @@ class NetVer:
 		"""
 		
 		#
-		return self.verifier.verify( verbose )
+		return self.verifier.verify( verbose, log_file )
 
 
 	def _create_net_decision( self, network, property ):

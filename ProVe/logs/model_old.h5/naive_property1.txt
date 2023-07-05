@@ -1,0 +1,43 @@
+Checking input: [[0.0, 1.0], [0.0, 1.0]]
+Iteration cycle   0 of  40 (checked  0.000%)
+Violation rate: 0
+Iteration cycle   1 of  40 (checked  0.000%)
+Violation rate: 0
+Iteration cycle   2 of  40 (checked  0.000%)
+Violation rate: 0
+Iteration cycle   3 of  40 (checked  50.000%)
+Violation rate: 0
+Iteration cycle   4 of  40 (checked  62.500%)
+Violation rate: 0
+Iteration cycle   5 of  40 (checked  87.500%)
+Violation rate: 0
+Iteration cycle   6 of  40 (checked  90.625%)
+Violation rate: 0
+Iteration cycle   7 of  40 (checked  96.875%)
+Violation rate: 0
+Iteration cycle   8 of  40 (checked  97.656%)
+Violation rate: 0
+Iteration cycle   9 of  40 (checked  99.219%)
+Violation rate: 0
+Iteration cycle  10 of  40 (checked  99.414%)
+Violation rate: 0
+Iteration cycle  11 of  40 (checked  99.805%)
+Violation rate: 0
+Iteration cycle  12 of  40 (checked  99.854%)
+Violation rate: 0
+Iteration cycle  13 of  40 (checked  99.951%)
+Violation rate: 0
+Iteration cycle  14 of  40 (checked  99.963%)
+Violation rate: 0
+Iteration cycle  15 of  40 (checked  99.988%)
+Violation rate: 0
+Iteration cycle  16 of  40 (checked  99.991%)
+Violation rate: 0
+Iteration cycle  17 of  40 (checked  99.997%)
+Violation rate: 0
+Iteration cycle  18 of  40 (checked  99.999%)
+Violation rate: 0
+Iteration cycle  19 of  40 (checked  100.000%)
+Violation rate: 0
+The property is SAT!
+Time execution: <module 'time' (built-in)> min 

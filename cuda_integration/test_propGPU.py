@@ -90,8 +90,6 @@ def multi_area_propagation_gpu(input_domain, net_model, thread_number=8):
 	return reshaped_bound
 
 
-
-
-input_domain = [[3.001, 5.], [4., 6.]]
+input_domain = [[1., 5.], [4., 6.]]
 net_model = tf.keras.models.load_model( "model_neg.h5", compile=False )
 print(multi_area_propagation_gpu(input_domain, net_model))

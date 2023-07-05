@@ -23,6 +23,7 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
     //Initialize equation arrays
 
     float* equation = new float[max_layer_size * ((input_size * 2) + 2)]();
+
     float* new_equation = new float[max_layer_size * ((input_size * 2) + 2)]();
 
     int actual_input_size = (2 * input_size) + 2;
@@ -33,9 +34,9 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
         }
     }
 
-    float tempVal_upper, tempVal_lower;
+    float tempVal_upper, tempVal_lower, tempVal_upper_min;
 
-    for (int i = 0; i < input_size; i ++) {
+    for (int i = 0; i < input_size; i++) {
         equation[i * actual_input_size + i * 2] = 1;
         equation[i * actual_input_size + (i * 2) + 1] = 1;
     }
@@ -47,7 +48,7 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
     for (int layer = 0; layer < layer_number - 1; layer++) {
         
         for(int i = 0; i < max_layer_size; i++){
-            for(int j = 0; j < (input_size * 2) + 2; j += 2){
+            for(int j = 0; j < actual_input_size; j += 2){
                 new_equation[i * actual_input_size + j] = 0;
                 new_equation[i * actual_input_size + j + 1] = 0;
             }
@@ -55,11 +56,10 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
 
         for (int i = 0; i < layer_sizes[layer + 1]; i++) {
 
-            tempVal_upper = tempVal_lower = 0.0;
+            tempVal_upper = tempVal_lower = tempVal_upper_min = 0.0;
 
             for (int j = 0; j < layer_sizes[layer]; j++) {
                 for (int k = 0; k < actual_input_size; k += 2) {
-                    
                     if (full_weights[weights_index] >= 0) {
                         new_equation[i * actual_input_size + k + 1] += equation[j * actual_input_size + k + 1] * full_weights[weights_index];
                         new_equation[i * actual_input_size + k] += equation[j * actual_input_size + k] * full_weights[weights_index];
@@ -83,12 +83,15 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
 
                 if (new_equation[i * actual_input_size + k + 1] >= 0) {
                     tempVal_upper += new_equation[i * actual_input_size + k + 1] * input_interval[k + 1];
+                    tempVal_upper_min += new_equation[i * actual_input_size + k + 1] * input_interval[k];
                 }
                 else {
                     tempVal_upper += new_equation[i * actual_input_size + k + 1] * input_interval[k];
+                    tempVal_upper_min += new_equation[i * actual_input_size + k + 1] * input_interval[k + 1];
                 }
             }
 
+            
             new_equation[i * actual_input_size + input_size * 2] += full_biases[bias_index];
             new_equation[i * actual_input_size + (input_size * 2) + 1] += full_biases[bias_index];
             
@@ -96,33 +99,49 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
 
             tempVal_lower += new_equation[i * actual_input_size + input_size * 2];
             tempVal_upper += new_equation[i * actual_input_size + (input_size * 2) + 1];
+            tempVal_upper_min += new_equation[i * actual_input_size + (input_size * 2) + 1];
 
             //concretization of RELU
 
             if (layer < (layer_number - 2)) {
-                if (tempVal_lower < 0.0) {
-                    tempVal_lower = 0.0;
+                if(activations[layer] == 1){
+                    if (tempVal_upper <= 0.0){
+                        tempVal_upper = 0.0;
+                        tempVal_lower = 0.0;
+                        tempVal_upper_min = 0.0;
 
-                    for(int k = 0; k < (input_size * 2) + 2; k += 2){
-                        new_equation[i * actual_input_size + k] = 0;
-                        new_equation[i * actual_input_size + k + 1] = 0;
+                        for(int k = 0; k < input_size * 2; k += 2){
+                            new_equation[i * actual_input_size + k] = 0;
+                            new_equation[i * actual_input_size + k + 1] = 0;
+                        }
+
+                        new_equation[i * actual_input_size + (input_size * 2)] = 0;
+                        new_equation[i * actual_input_size + (input_size * 2) + 1] = 0;
                     }
+                    else if (tempVal_lower < 0.0) {
+                        tempVal_lower = 0.0;
 
-                    new_equation[i * actual_input_size + (input_size * 2) + 1] = tempVal_upper;
-                }
+                        for(int k = 0; k < input_size * 2; k += 2){
+                            new_equation[i * actual_input_size + k] = 0;
+                        }
 
-                if (tempVal_upper < 0.0){
-                    tempVal_upper = 0.0;
+                        new_equation[i * actual_input_size + (input_size * 2)] = 0;
 
-                    for(int k = 0; k < (input_size * 2) + 2; k += 2){
-                        new_equation[i * actual_input_size + k] = 0;
-                        new_equation[i * actual_input_size + k + 1] = 0;
+                        if(tempVal_upper_min <= 0){
+                            tempVal_upper_min = tempVal_upper;
+
+                            for(int k = 0; k < input_size * 2; k += 2){
+                                new_equation[i * actual_input_size + k + 1] = 0;
+                            }
+
+                            new_equation[i * actual_input_size + (input_size * 2) + 1] = tempVal_upper;
+                        }
                     }
                 }
             }
             else {
-                output_interval[(i * 2) + 1] = tempVal_upper;
                 output_interval[i * 2] = tempVal_lower;
+                output_interval[(i * 2) + 1] = tempVal_upper;
             }
         }
 

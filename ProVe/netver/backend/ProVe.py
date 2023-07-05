@@ -1,3 +1,4 @@
+import os
 import netver.utils.propagation_utilities as prop_utils
 import numpy as np
 
@@ -91,7 +92,7 @@ class ProVe( ):
 		if self.cpu_only: self._propagation_method = prop_utils.multi_area_propagation_cpu
 		else: self._propagation_method = prop_utils.multi_area_propagation_gpu
 
-	def verify( self, verbose ):
+	def verify( self, verbose, log_file ):
 		"""
 		Method that perform the formal analysis. When the solver explored and verify all the input domain it returns the
 		violation rate, when the violation rate is zero we coclude that the original property is fully respected, i.e., SAT
@@ -117,12 +118,13 @@ class ProVe( ):
 
 		# Array with the number of violations for each depth level
 		violation_rate_array = []
+
 		
 		# Loop until all the subareas are eliminated (verified) or a counter example is found
 		for cycle in range(self.time_out_cycle):
 
-			# Print some monitoring information
-			if verbose > 0: print( f"Iteration cycle {cycle:3d} of {self.time_out_cycle:3d} (checked  {100-self.unchecked_area:5.3f}%)" )
+			checked_area_log = f"Iteration cycle {cycle:3d} of {self.time_out_cycle:3d} (checked  {100-self.unchecked_area:5.3f}%)"
+			if verbose > 0: print( checked_area_log )
 
 			# Eventually round the areas matrix
 			if self.rounding is not None: areas_matrix = np.round(areas_matrix, self.rounding)
@@ -130,20 +132,19 @@ class ProVe( ):
 			# Reshape the areas matrix in the form (N, input_number, 2)
 			test_domain = areas_matrix.reshape(-1, self.P.shape[0], 2)
 
-			if cycle == self.time_out_cycle - 1:
 
-				with open(f"prove_{self.interval_propagation}.txt", 'w') as outfile:
-					outfile.write('# Array shape: {0}\n'.format(test_domain.shape))
-
-					for data_slice in test_domain:
-						np.savetxt(outfile, data_slice, fmt='%-7.2f')						
-						outfile.write('# New slice\n')
+			with open(f"prove_{self.interval_propagation}.txt", "w") as outfile:
+				outfile.write("Array shape: {0}\n".format(test_domain.shape))
+					
+				for data_slice in test_domain:
+					np.savetxt(outfile, data_slice, fmt="%-7.2f")
+					outfile.write("New slice\n")
+					
+				outfile.write("End of data\n\n\n\n")
 
 			# Call the propagation method to obtain the output bound from the input area (primal and dual)
-			test_bound = self._propagation_method( test_domain, self.network, self.interval_propagation )
-			test_bound_dual = self._propagation_method( test_domain, self.dual_network, self.interval_propagation )
-
-			#print(test_bound)
+			test_bound, gradients = self._propagation_method( test_domain, self.network, self.interval_propagation )
+			test_bound_dual, _ = self._propagation_method( test_domain, self.dual_network, self.interval_propagation )
 
 			# Call the verifier (N(x) >= 0) on all the subareas
 			unknown_id, violated_id, proved_id = self._complete_verifier( test_bound, test_bound_dual )
@@ -154,8 +155,11 @@ class ProVe( ):
 			# Update the violation rate array to compute the violation rate
 			violation_rate_array.append( len(violated_id[0]) )
 
+			#print(gradients)
+
 			# Iterate only on the unverified subareas
 			areas_matrix = areas_matrix[unknown_id]
+			gradients = gradients[unknown_id]
 
 			# Exit check when all the subareas are verified
 			if areas_matrix.shape[0] == 0: break
@@ -167,10 +171,15 @@ class ProVe( ):
 				break
 
 			# Split the inputs (Iterative Refinement)
-			areas_matrix = self._split( areas_matrix )
+			areas_matrix = self._split( areas_matrix, gradients )
+
+			# Print some monitoring information
+			violation_rate_log = f"Violation rate: {len(violated_id[0])}"
+			if verbose > 1: log_file.write(f"{checked_area_log}\n{violation_rate_log}\n")
 
 		# Check if the exit reason is the time out on the cycle
 		if cycle >= self.time_out_cycle:
+
 			# return UNSAT with the no counter example, specifying the exit reason
 			return False, { "counter_example" : None, "exit_code" : "cycle_timeout" }
 
@@ -253,7 +262,7 @@ class ProVe( ):
 		self.unchecked_area -= 100 / 2**depth * verified_nodes
 		
 
-	def _split( self, areas_matrix ):
+	def _split( self, areas_matrix, gradients ):
 
 		"""
 		Split the current domain in 2 domain, selecting on which node perform the cut
@@ -274,7 +283,7 @@ class ProVe( ):
 		"""
 
 		# Chose the node to split and perform the subdivision, finally perform a reshaping
-		i = self._chose_node( areas_matrix )
+		i = self._chose_node( areas_matrix, gradients )
 		res = (areas_matrix.dot(self._split_matrix[i]))
 		areas_matrix = res.reshape((len(res) * 2, self.P.shape[0] * 2))
 
@@ -282,7 +291,7 @@ class ProVe( ):
 		return areas_matrix
 
 
-	def _chose_node( self, area_matrix ):
+	def _chose_node( self, area_matrix, gradients ):
 
 		"""
 		Select the node on which performs the splitting, the implemented heuristic is to always select the node
@@ -302,17 +311,57 @@ class ProVe( ):
 
 		# Compute the size of the bound for each sub-interval (i.e., rows)
 		first_row = area_matrix[0]
-		distances = []
+		first_gradient = gradients[0]
 		closed = []
+		#print(first_gradient)
+
+		split_idx = 0
+		smear = 0
+
+		#print(gradients)
+
+		#print(f'Shape {self.P.shape[0]}')
+		#print(area_matrix)
+		#print(first_row)
+		#print(f'Reshape {first_row.reshape(self.P.shape[0], 2)}')
+
+		'''
+		monotone = False
+
 		for index, el in enumerate(first_row.reshape(self.P.shape[0], 2)):
-			distance = el[1] - el[0]
+			if first_gradient[index * 2] >= 0 or first_gradient[index * 2 + 1] <= 0:
+				monotone = True
+
+				if first_gradient[index * 2 + 1] > -first_gradient[index * 2]:
+					influence = first_gradient[index * 2 + 1]
+				else:
+					influence = -first_gradient[index * 2] * (el[1] - el[0])
+				
+				if influence > smear:
+					smear = influence
+					split_idx = index
+
+
+		if not monotone:
+		'''
+		for index, el in enumerate(first_row.reshape(self.P.shape[0], 2)):
+			distance = (el[1] - el[0])
+			
+			if first_gradient[index * 2 + 1] > -first_gradient[index * 2]:
+				e = first_gradient[index * 2 + 1]
+			else:
+				e = -first_gradient[index * 2]
+
+			influence = distance * e
 			if(distance == 0): closed.append(index)
-			distances.append(el[1] - el[0])
+				
+			if influence > smear:
+				smear = influence
+				split_idx = index
 
 		# Find the index of the node with the largest interval
-		distance_index = distances.index(max(distances))
+		distance_index = split_idx
 
-		#
 		return distance_index
 
 

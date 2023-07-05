@@ -69,22 +69,43 @@ def MLP(input_size, n_hiddens, size_hiddens, output_size):
 
     return model
 
+def generate_input_points( cloud_size, input_area ):
+
+    input_area = input_area.reshape(1, input_area.shape[0], 2) 
+
+    domains = np.array([np.random.uniform(i[:, 0], i[:, 1], size=(cloud_size, input_area.shape[1])) for i in input_area])
+    network_input = domains.reshape( cloud_size*input_area.shape[0], -1 )
+    
+    return network_input
+
+
+def get_rate( model, network_input ):
+
+    model_prediction = model(network_input).numpy()
+
+    where_indexes = np.where([model_prediction < 0])[1]
+        
+
+    input_conf = network_input[where_indexes]
+
+    return len(where_indexes), input_conf
+
+
 
 
 if __name__ == "__main__":
 
     # hyperparameters
-    input_size = 2
-    n_hiddens = 1
-    size_hiddens = 2
-    output_size = 1
-    manual_weights = True
+    input_size = 5
+    n_hiddens = 2
+    size_hiddens = 32
+    output_size = 2
+    manual_weights = False
 
-    # create keras model
-    model = MLP(input_size, n_hiddens, size_hiddens, output_size)
+   
 
     # check the model
-    model.summary()
+    #model.summary()
     
     if manual_weights:
 
@@ -105,7 +126,24 @@ if __name__ == "__main__":
         bias = np.array([0])
         model.layers[2].set_weights([weights,bias])
 
-    model.save("model.h5")
+     # create keras model
+    
+    for _ in range(1000):
+        model = MLP(input_size, n_hiddens, size_hiddens, output_size)
+
+        cloud_size = 1000000
+        input_area = np.array([[0.1, 0.15], [0.2, 0.3], [0.7, 0.8], [0.9, 0.95], [0.9, 1.]])
+        network_input = generate_input_points( cloud_size, input_area )
+        num_sat_points, sat_points = get_rate(model, network_input)
+        rate = (num_sat_points / cloud_size)
+
+        if rate >= 0.85 and rate < 0.95:
+            print(rate)
+            model.save("model_5_.h5")
+            quit()
+
+
+
 
     # Test model with forward propagation
     print(model(np.array([[2, 5, 6]])))
@@ -131,3 +169,5 @@ if __name__ == "__main__":
 
     # Convert the file
     write_NNet(weights,biases,nnetFile)
+
+

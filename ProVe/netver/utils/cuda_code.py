@@ -12,7 +12,9 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
 	float* new_layer_values = new float[max_layer_size * 2]();
 
 	// Step 1: copy inputs in 'old_layer_values' ('new_layer_values' is the first hidden layer)
-	for (int i = 0; i < (2 * layer_sizes[0]); i++) old_layer_values[i] = input_domain[area_start + i];
+	for (int i = 0; i < (2 * layer_sizes[0]); i++){
+    	old_layer_values[i] = input_domain[area_start + i];
+    }
 	
 	// Step 2: starting the propagation cycle
 	int bias_index = 0;
@@ -60,10 +62,9 @@ extern "C" __global__ void my_kernel(float* input_domain, int input_domain_n, in
 	// Step 3: copy the local output layer in the global 'results_cuda' array
 	int results_start = thread_id * layer_sizes[layer_number - 1] * 2;
 	for (int i=0; i < layer_sizes[layer_number - 1] * 2; i++) {
-        //printf("%f ", old_layer_values[i]);
     	results_cuda[results_start + i] = old_layer_values[i];
     }
-    //printf(" - ");
+    
 	// Free memory
 	delete[] old_layer_values;
 	delete[] new_layer_values;        

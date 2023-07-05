@@ -1,0 +1,45 @@
+Checking input: [[0.0, 1.0], [0.0, 1.0]]
+Iteration cycle   0 of  40 (checked  0.000%)
+Violation rate: 0
+Iteration cycle   1 of  40 (checked  0.000%)
+Violation rate: 0
+Iteration cycle   2 of  40 (checked  0.000%)
+Violation rate: 0
+Iteration cycle   3 of  40 (checked  0.000%)
+Violation rate: 0
+Iteration cycle   4 of  40 (checked  0.000%)
+Violation rate: 1
+Iteration cycle   5 of  40 (checked  18.750%)
+Violation rate: 1
+Iteration cycle   6 of  40 (checked  28.125%)
+Violation rate: 8
+Iteration cycle   7 of  40 (checked  45.312%)
+Violation rate: 10
+Iteration cycle   8 of  40 (checked  61.719%)
+Violation rate: 32
+Iteration cycle   9 of  40 (checked  78.906%)
+Violation rate: 24
+Iteration cycle  10 of  40 (checked  86.133%)
+Violation rate: 36
+Iteration cycle  11 of  40 (checked  91.406%)
+Violation rate: 35
+Iteration cycle  12 of  40 (checked  94.189%)
+Violation rate: 57
+Iteration cycle  13 of  40 (checked  96.265%)
+Violation rate: 53
+Iteration cycle  14 of  40 (checked  97.412%)
+Violation rate: 90
+Iteration cycle  15 of  40 (checked  98.462%)
+Violation rate: 78
+Iteration cycle  16 of  40 (checked  98.941%)
+Violation rate: 145
+Iteration cycle  17 of  40 (checked  99.406%)
+Violation rate: 141
+Iteration cycle  18 of  40 (checked  99.621%)
+Violation rate: 244
+Iteration cycle  19 of  40 (checked  99.808%)
+Violation rate: 279
+The property is UNSAT!
+Input size: 2
+Violation rate: 55.444
+Time execution: 0.00143 min
