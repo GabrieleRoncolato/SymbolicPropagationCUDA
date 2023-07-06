@@ -25,8 +25,6 @@ extern "C" __global__ void my_kernel_symbolic(float* input_domain, int input_dom
     int thread_idx = (max_layer_size * 2 + node_number + input_size * 2 + output_size * 2 + actual_input_size * max_layer_size * 2) * threadIdx.x;
     float* thread_allocation = (float*)&shared_allocation[thread_idx];
 
-    //printf("%i ", thread_idx);
-
     //Initialize equation arrays
 
     float* input_interval = (float*)thread_allocation;
@@ -194,13 +192,30 @@ extern "C" __global__ void my_kernel_symbolic(float* input_domain, int input_dom
     weights_index--;
     concretizations_index--;
 
+    /*
+    for(int j = output_size - 1; j >= 0; j--){
+        gradients[j * 2] += output_interval[j * 2];
+        gradients[j * 2 + 1] += output_interval[j * 2 + 1];
+    }
+    */
+
+    for(int j = 0; j < max_layer_size; j++){
+        grads_temp[j * 2] = 0;
+        grads_temp[j * 2 + 1] = 0;
+    }
+    
     for(int j = layer_sizes[layer_number - 1] - 1; j >= 0; j--){
         for(int i = layer_sizes[layer_number - 2] - 1; i >= 0; i--){
-            gradients[i * 2] += full_weights[weights_index];
-            gradients[i * 2 + 1] += full_weights[weights_index];
+            grads_temp[i * 2 + 1] += full_weights[weights_index];
+            grads_temp[i * 2] += full_weights[weights_index];
 
             weights_index--;
         }
+    }
+
+    for(int j = 0; j < max_layer_size; j++){
+        gradients[j * 2] = grads_temp[j * 2];
+        gradients[j * 2 + 1] = grads_temp[j * 2 + 1];
     }
 
     for(int layer = layer_number - 3; layer >= 0; layer--){

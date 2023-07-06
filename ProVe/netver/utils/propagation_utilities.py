@@ -127,7 +127,7 @@ def single_area_propagation_cpu( input_domain, net_model ):
 
 
 
-def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_number=4):
+def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_number=2):
 
 	"""
 	Propagation of the input domain through the network to obtain the OVERESTIMATION of the output bound. 
