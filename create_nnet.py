@@ -96,12 +96,14 @@ def get_rate( model, network_input ):
 if __name__ == "__main__":
 
     # hyperparameters
-    input_size = 5
-    n_hiddens = 2
+    input_size = 3
+    n_hiddens = 1
     size_hiddens = 32
-    output_size = 2
+    output_size = 1
     manual_weights = False
 
+    rate_range = [0.0, 0.0]
+    input_area = np.array([[0.0, 1.0]] * input_size)
    
 
     # check the model
@@ -132,14 +134,13 @@ if __name__ == "__main__":
         model = MLP(input_size, n_hiddens, size_hiddens, output_size)
 
         cloud_size = 1000000
-        input_area = np.array([[0.1, 0.15], [0.2, 0.3], [0.7, 0.8], [0.9, 0.95], [0.9, 1.]])
         network_input = generate_input_points( cloud_size, input_area )
         num_sat_points, sat_points = get_rate(model, network_input)
         rate = (num_sat_points / cloud_size)
 
-        if rate >= 0.85 and rate < 0.95:
+        if rate >= rate_range[0] and rate <= rate_range[1]:
             print(rate)
-            model.save("model_5_.h5")
+            model.save(f"model_{input_size}_{int(rate * 100)}.h5")
             quit()
 
 

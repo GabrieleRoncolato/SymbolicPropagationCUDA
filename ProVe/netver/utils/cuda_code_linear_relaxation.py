@@ -2,14 +2,15 @@ cuda_code = '''
 
 extern "C" __global__ void my_kernel_relaxation(float* input_domain, int input_domain_n, int* layer_sizes, int layer_number, float* full_weights, 
 			float* full_biases, float* results_cuda, int max_layer_size, int* activations) {
-            
-    int input_size = layer_sizes[0];
-    int output_size = layer_sizes[layer_number - 1];
 
     // Copy global input_domain into local 'input_interval' array
 
     int thread_id = blockDim.x * blockIdx.x + threadIdx.x;
     if (thread_id >= input_domain_n) return;
+
+    int input_size = layer_sizes[0];
+    int output_size = layer_sizes[layer_number - 1];
+
     int area_start = thread_id * input_size * 2;
     
     //allocate shared memory
@@ -117,8 +118,6 @@ extern "C" __global__ void my_kernel_relaxation(float* input_domain, int input_d
             tempVal_upper += new_equation[node_idx + (input_size * 2) + 1];
             tempVal_lower_max += new_equation[node_idx + (input_size * 2)];
             tempVal_upper_min += new_equation[node_idx + (input_size * 2) + 1];
-
-            //concretization of RELU
 
             if (layer < (layer_number - 2)) {
                 if(activations[layer] == 1){

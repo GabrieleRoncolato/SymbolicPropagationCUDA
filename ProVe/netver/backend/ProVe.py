@@ -1,6 +1,8 @@
 import os
 import netver.utils.propagation_utilities as prop_utils
 import numpy as np
+import gurobipy as gp
+from gurobipy import GRB
 
 
 class ProVe( ):
@@ -92,7 +94,7 @@ class ProVe( ):
 		if self.cpu_only: self._propagation_method = prop_utils.multi_area_propagation_cpu
 		else: self._propagation_method = prop_utils.multi_area_propagation_gpu
 
-	def verify( self, verbose, log_file ):
+	def verify( self, verbose ):
 		"""
 		Method that perform the formal analysis. When the solver explored and verify all the input domain it returns the
 		violation rate, when the violation rate is zero we coclude that the original property is fully respected, i.e., SAT
@@ -132,19 +134,9 @@ class ProVe( ):
 			# Reshape the areas matrix in the form (N, input_number, 2)
 			test_domain = areas_matrix.reshape(-1, self.P.shape[0], 2)
 
-
-			with open(f"prove_{self.interval_propagation}.txt", "w") as outfile:
-				outfile.write("Array shape: {0}\n".format(test_domain.shape))
-					
-				for data_slice in test_domain:
-					np.savetxt(outfile, data_slice, fmt="%-7.2f")
-					outfile.write("New slice\n")
-					
-				outfile.write("End of data\n\n\n\n")
-
 			# Call the propagation method to obtain the output bound from the input area (primal and dual)
-			test_bound, gradients = self._propagation_method( test_domain, self.network, self.interval_propagation )
-			test_bound_dual, _ = self._propagation_method( test_domain, self.dual_network, self.interval_propagation )
+			test_bound = self._propagation_method( test_domain, self.network, self.interval_propagation )
+			test_bound_dual = self._propagation_method( test_domain, self.dual_network, self.interval_propagation )
 
 			# Call the verifier (N(x) >= 0) on all the subareas
 			unknown_id, violated_id, proved_id = self._complete_verifier( test_bound, test_bound_dual )
@@ -155,11 +147,8 @@ class ProVe( ):
 			# Update the violation rate array to compute the violation rate
 			violation_rate_array.append( len(violated_id[0]) )
 
-			#print(gradients)
-
 			# Iterate only on the unverified subareas
 			areas_matrix = areas_matrix[unknown_id]
-			gradients = gradients[unknown_id]
 
 			# Exit check when all the subareas are verified
 			if areas_matrix.shape[0] == 0: break
@@ -171,15 +160,10 @@ class ProVe( ):
 				break
 
 			# Split the inputs (Iterative Refinement)
-			areas_matrix = self._split( areas_matrix, gradients )
-
-			# Print some monitoring information
-			violation_rate_log = f"Violation rate: {len(violated_id[0])}"
-			if verbose > 1: log_file.write(f"{checked_area_log}\n{violation_rate_log}\n")
+			areas_matrix = self._split( areas_matrix )
 
 		# Check if the exit reason is the time out on the cycle
 		if cycle >= self.time_out_cycle:
-
 			# return UNSAT with the no counter example, specifying the exit reason
 			return False, { "counter_example" : None, "exit_code" : "cycle_timeout" }
 
@@ -190,7 +174,6 @@ class ProVe( ):
 
 		# All the input are verified, return SAT with no counter example
 		return (violation_rate == 0), { "violation_rate": violation_rate }
-
 
 
 	def _complete_verifier( self, test_bound, test_bound_dual ):
@@ -222,6 +205,7 @@ class ProVe( ):
 		# in the latter at least one bound must be greater than zero. 
 		# To deny the property, in the first case at least one bound must be greater than zero,
 		# in the latter every one bound must be greater than zero. 
+		
 		if not self.reversed:
 			proved_bound = np.all(test_bound[:, :, 0] >= 0, axis=1) # Property proved here!
 			violated_bound = np.any(test_bound_dual[:, :, 0] > 0, axis=1) # Property violated here!
@@ -239,7 +223,7 @@ class ProVe( ):
 
 		#
 		return unknown_id, violated_id, proved_id
-
+	
 
 	def _update_unchecked_area( self, depth, verified_nodes ):
 
@@ -262,7 +246,7 @@ class ProVe( ):
 		self.unchecked_area -= 100 / 2**depth * verified_nodes
 		
 
-	def _split( self, areas_matrix, gradients ):
+	def _split( self, areas_matrix ):
 
 		"""
 		Split the current domain in 2 domain, selecting on which node perform the cut
@@ -283,7 +267,7 @@ class ProVe( ):
 		"""
 
 		# Chose the node to split and perform the subdivision, finally perform a reshaping
-		i = self._chose_node( areas_matrix, gradients )
+		i = self._chose_node( areas_matrix)
 		res = (areas_matrix.dot(self._split_matrix[i]))
 		areas_matrix = res.reshape((len(res) * 2, self.P.shape[0] * 2))
 
@@ -291,7 +275,7 @@ class ProVe( ):
 		return areas_matrix
 
 
-	def _chose_node( self, area_matrix, gradients ):
+	def _chose_node( self, area_matrix):
 
 		"""
 		Select the node on which performs the splitting, the implemented heuristic is to always select the node
@@ -310,59 +294,72 @@ class ProVe( ):
 		"""
 
 		# Compute the size of the bound for each sub-interval (i.e., rows)
-		first_row = area_matrix[0]
-		first_gradient = gradients[0]
+		
+		row = area_matrix[0]
+
 		closed = []
-		#print(first_gradient)
 
 		split_idx = 0
 		smear = 0
 
-		#print(gradients)
+		for index, el in enumerate(row.reshape(self.P.shape[0], 2)):
 
-		#print(f'Shape {self.P.shape[0]}')
-		#print(area_matrix)
-		#print(first_row)
-		#print(f'Reshape {first_row.reshape(self.P.shape[0], 2)}')
-
-		'''
-		monotone = False
-
-		for index, el in enumerate(first_row.reshape(self.P.shape[0], 2)):
-			if first_gradient[index * 2] >= 0 or first_gradient[index * 2 + 1] <= 0:
-				monotone = True
-
-				if first_gradient[index * 2 + 1] > -first_gradient[index * 2]:
-					influence = first_gradient[index * 2 + 1]
-				else:
-					influence = -first_gradient[index * 2] * (el[1] - el[0])
-				
-				if influence > smear:
-					smear = influence
-					split_idx = index
-
-
-		if not monotone:
-		'''
-		for index, el in enumerate(first_row.reshape(self.P.shape[0], 2)):
-			distance = (el[1] - el[0])
+			distance = el[1] - el[0]
 			
-			if first_gradient[index * 2 + 1] > -first_gradient[index * 2]:
-				e = first_gradient[index * 2 + 1]
-			else:
-				e = -first_gradient[index * 2]
-
-			influence = distance * e
 			if(distance == 0): closed.append(index)
-				
-			if influence > smear:
-				smear = influence
+
+			if distance > smear:
+				smear = distance
 				split_idx = index
 
-		# Find the index of the node with the largest interval
-		distance_index = split_idx
+		# Find the index of the node with the largest influence over the output
+		return split_idx
+	
 
-		return distance_index
+	def _chose_node_gradient( self, area_matrix, gradients, monotonicity ):
+		
+		"""
+		Select the node on which performs the splitting, the implemented heuristic is to always select the node
+		with the largest bound.
+
+		Parameters
+		----------
+			areas_matrix : list 
+				matrix that represent the current state of the domain, a list where each row is a sub-portion
+				of the global input domain
+
+		Returns:
+		--------
+			distance_index : int
+				index of the selected node (based on the heuristic)
+		"""
+
+		# Compute the size of the bound for each sub-interval (i.e., rows)
+
+		area_idx = 0
+		for mono_idx, mono in enumerate(monotonicity):
+			if np.any(mono == False):
+				area_idx = mono_idx
+		
+		row = area_matrix[area_idx]
+		mono = monotonicity[area_idx]
+
+		closed = []
+
+		split_idx = 0
+		smear = 0
+
+		for index, el in enumerate(row.reshape(self.P.shape[0], 2)):
+			distance = el[1] - el[0]
+			
+			if(distance == 0): closed.append(index)
+
+			if distance > smear:
+				smear = distance
+				split_idx = index
+
+		# Find the index of the node with the largest influence over the output
+		return split_idx
 
 
 	def _generate_splitmatrix( self ):

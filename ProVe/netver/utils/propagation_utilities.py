@@ -127,7 +127,7 @@ def single_area_propagation_cpu( input_domain, net_model ):
 
 
 
-def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_number=2):
+def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_number=4):
 
 	"""
 	Propagation of the input domain through the network to obtain the OVERESTIMATION of the output bound. 
@@ -199,13 +199,15 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 	else:
 		my_kernel = cp.RawKernel(cuda_code, 'my_kernel_relaxation')
 
+	input_size = layer_sizes[0]
+
 	# Convert all the data in cupy array beore the kernel call
 	max_layer_size = max(layer_sizes)
 	results_cuda = cp.zeros(layer_sizes[-1] * 2 * len(input_domain), dtype=cp.float32)
+
 	layer_sizes = cp.array(layer_sizes, dtype=cp.int32)
 	activations = cp.array(activations, dtype=cp.int32)
 	input_domain = cp.array(input_domain, dtype=cp.float32)
-	gradients = cp.zeros((max_layer_size * 2) * len(input_domain), dtype=cp.float32)
 
 	full_weights = cp.array(full_weights, dtype=cp.float32)
 	full_biases = cp.array(full_biases, dtype=cp.float32)
@@ -215,18 +217,14 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 
 	# Create and launch the kernel, wait for the sync of all threads
 
-	kernel_input = (input_domain, len(input_domain), layer_sizes, len(layer_sizes), full_weights, full_biases, results_cuda, max_layer_size, activations, gradients)
-
+	kernel_input = (input_domain, len(input_domain), layer_sizes, len(layer_sizes), full_weights, full_biases, results_cuda, max_layer_size, activations)
 	my_kernel((block_number, ), (thread_number, ), kernel_input)
-
 	cp.cuda.Stream.null.synchronize()
 
-	#print(gradients)
 
 	# Reshape the results and convert in numpy array
 	reshaped_bound = cp.asnumpy(results_cuda).reshape((len(input_domain), net_model.layers[-1].output_shape[1], 2))
-	gradients = gradients.reshape(-1, (max_layer_size * 2))
 
-	return reshaped_bound, gradients
+	return reshaped_bound
 
 	
