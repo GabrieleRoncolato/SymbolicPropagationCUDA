@@ -1,8 +1,5 @@
-import os
 import netver.utils.propagation_utilities as prop_utils
 import numpy as np
-import gurobipy as gp
-from gurobipy import GRB
 
 
 class ProVe( ):
