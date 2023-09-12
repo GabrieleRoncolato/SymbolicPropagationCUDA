@@ -1,3 +1,0 @@
-Checking input: [[0.0, 1.0], [0.0, 1.0]]
-The property is SAT!
-Time execution: <module 'time' (built-in)> min 
