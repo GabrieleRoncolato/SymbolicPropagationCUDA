@@ -1,5 +1,6 @@
 import netver.utils.propagation_utilities as prop_utils
 import numpy as np
+import cupy as cp
 
 
 class ProVe( ):
@@ -48,7 +49,7 @@ class ProVe( ):
 
 	# Verification hyper-parameters
 	cpu_only = False
-	time_out_cycle = 40
+	time_out_cycle = 60
 	time_out_checked = 0.0
 	rounding = None
 	reversed = False
@@ -263,12 +264,31 @@ class ProVe( ):
 				2 times the number of rows of the input one
 		"""
 
-		# Chose the node to split and perform the subdivision, finally perform a reshaping
 		i = self._chose_node( areas_matrix)
-		res = (areas_matrix.dot(self._split_matrix[i]))
-		areas_matrix = res.reshape((len(res) * 2, self.P.shape[0] * 2))
+		free_memory, _ = cp.cuda.runtime.memGetInfo()
 
-		#
+		batch_size = int((free_memory * 3 / 5) / (areas_matrix.nbytes / len(areas_matrix)))
+		batches = len(areas_matrix) // batch_size
+
+		if areas_matrix.nbytes % batch_size != 0:
+			batches += 1
+
+		res = np.empty((0, self._split_matrix[i].shape[1]), dtype=np.float32)
+
+		for iter in range(batches):
+			if iter == batches - 1:
+				upper_limit = len(areas_matrix)
+			else:
+				upper_limit = batch_size
+			
+			temp_result = areas_matrix[0 : upper_limit].dot(self._split_matrix[i])
+
+			if iter < batches - 1:
+				areas_matrix = areas_matrix[upper_limit:]
+			
+			res = np.concatenate((res, temp_result), axis=0)
+
+		areas_matrix = res.reshape((len(res) * 2, self.P.shape[0] * 2))
 		return areas_matrix
 
 
@@ -293,7 +313,6 @@ class ProVe( ):
 		# Compute the size of the bound for each sub-interval (i.e., rows)
 		
 		row = area_matrix[0]
-
 		closed = []
 
 		split_idx = 0
@@ -312,52 +331,6 @@ class ProVe( ):
 		# Find the index of the node with the largest influence over the output
 		return split_idx
 	
-
-	def _chose_node_gradient( self, area_matrix, gradients, monotonicity ):
-		
-		"""
-		Select the node on which performs the splitting, the implemented heuristic is to always select the node
-		with the largest bound.
-
-		Parameters
-		----------
-			areas_matrix : list 
-				matrix that represent the current state of the domain, a list where each row is a sub-portion
-				of the global input domain
-
-		Returns:
-		--------
-			distance_index : int
-				index of the selected node (based on the heuristic)
-		"""
-
-		# Compute the size of the bound for each sub-interval (i.e., rows)
-
-		area_idx = 0
-		for mono_idx, mono in enumerate(monotonicity):
-			if np.any(mono == False):
-				area_idx = mono_idx
-		
-		row = area_matrix[area_idx]
-		mono = monotonicity[area_idx]
-
-		closed = []
-
-		split_idx = 0
-		smear = 0
-
-		for index, el in enumerate(row.reshape(self.P.shape[0], 2)):
-			distance = el[1] - el[0]
-			
-			if(distance == 0): closed.append(index)
-
-			if distance > smear:
-				smear = distance
-				split_idx = index
-
-		# Find the index of the node with the largest influence over the output
-		return split_idx
-
 
 	def _generate_splitmatrix( self ):
 

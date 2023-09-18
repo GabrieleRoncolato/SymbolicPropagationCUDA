@@ -6,21 +6,40 @@ import time
 from netver.utils.colors import bcolors
 from netver.verifier import NetVer
 
-model_name = "model_3_57.h5"
-model_path = "./models_h5_tests"
+model_name = "model_5_09.h5"
+model_path = "./acals_scalability/acas_model"
 
 # safety property
+
 property = {
-    "type" : "positive",
-    "name": "property1",
-    "P" : [[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
+    "type" : "decision",
+    "name": "property2",
+    "P" :  [[ 0.600000,  0.679858],
+			[-0.500000,  0.500000],
+			[-0.500000,  0.500000],
+			[ 0.450000,  0.500000],
+			[-0.500000, -0.450000]],
+    "A": 0
 }
 
-def run_prover(propagation, model_str, property):
-    # load your model
+'''
+property = {
+    "type" : "positive",
+    "name": "property",
+    "P" :  [[ 0.0,  1.0],
+			[0.0,  1.0],
+			[0.0,  1.0],
+            [0.0,  1.0],
+            [0.0,  1.0]]
+}
+'''
 
-    model = tf.keras.models.load_model( model_str, compile=False )
-    
+def run_prover(propagation, model_str, property):
+
+    # load your model
+    str_model_tf = f"./acas_scalability/acas_model/ACASXU_run2a_2_7_batch_2000.h5"
+    #str_model_tf = "./models_scalability/model_5_09.h5"
+    model = tf.keras.models.load_model( str_model_tf, compile=False )
 
     # ProVe hyperparameters
     method = "ProVe"            # select the method: for the formal analysis select "ProVe" otherwise "estimated"
@@ -30,9 +49,9 @@ def run_prover(propagation, model_str, property):
     cloud = 1000000             # number of random state to sample for the approximate verification i.e., the "estimated" analysis
 
     if method == 'ProVe':
-        netver = NetVer( method, model, property, rounding=discretization, cpu_only=CPU, interval_propagation=propagation, time_out_checked=0., reversed = True )
+        netver = NetVer( method, model, property, rounding=discretization, cpu_only=CPU, interval_propagation=propagation, time_out_checked=0.05, reversed = False )
     else:
-        netver = NetVer( "estimated", model, property, cloud_size=cloud )
+        netver = NetVer( "estimated", model, property, cloud_size=cloud)
 
     print(bcolors.OKCYAN + '\n\t#################################################################################' + bcolors.ENDC)
     print(bcolors.OKCYAN + '\t\t\t\t\tProVe hyperparameters:\t\t\t\t' + bcolors.ENDC)
@@ -62,6 +81,6 @@ def run_prover(propagation, model_str, property):
     return sat, model.layers[0].input_shape[0][1], round(info['violation_rate'], 3)
 
 if __name__ == "__main__":
-    run_prover("naive", f"{model_path}/{model_name}", property)
+    #run_prover("naive", f"{model_path}/{model_name}", property)
     run_prover("symbolic", f"{model_path}/{model_name}", property)
     run_prover("relaxation", f"{model_path}/{model_name}", property)

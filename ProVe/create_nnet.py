@@ -1,4 +1,7 @@
 import os
+
+from netver.verifier import NetVer
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 from tensorflow.keras.models import Model
@@ -91,7 +94,37 @@ def get_rate( model, network_input ):
     return len(where_indexes), input_conf
 
 
+model_name = "model_3_0.h5"
+model_path = "."
 
+# safety property
+property = {
+    "type" : "positive",
+    "name": "property1",
+    "P" : [[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]],
+}
+
+def run_prover(propagation, model_str, property):
+    # load your model
+
+    model = tf.keras.models.load_model( model_str, compile=False )
+    
+
+    # ProVe hyperparameters
+    method = "ProVe"            # select the method: for the formal analysis select "ProVe" otherwise "estimated"
+    discretization = 3          # how many digitals consider for the computation
+    CPU = False                 # select the hardware for the formal analysis
+    verbose = 0                 # whether to print info abount the computation of ProVe
+    cloud = 1000000             # number of random state to sample for the approximate verification i.e., the "estimated" analysis
+
+    if method == 'ProVe':
+        netver = NetVer( method, model, property, rounding=discretization, cpu_only=CPU, interval_propagation=propagation, time_out_checked=0., reversed = True )
+    else:
+        netver = NetVer( "estimated", model, property, cloud_size=cloud )
+
+    sat, info = netver.run_verifier( verbose )
+
+    return sat, info
 
 if __name__ == "__main__":
 
@@ -102,7 +135,7 @@ if __name__ == "__main__":
     output_size = 1
     manual_weights = False
 
-    rate_range = [0.0, 0.0]
+    rate_range = [0.9, 1.0]
     input_area = np.array([[0.0, 1.0]] * input_size)
    
 
@@ -130,7 +163,7 @@ if __name__ == "__main__":
 
      # create keras model
     
-    for _ in range(1000):
+    for _ in range(10000):
         model = MLP(input_size, n_hiddens, size_hiddens, output_size)
 
         cloud_size = 1000000
@@ -138,9 +171,17 @@ if __name__ == "__main__":
         num_sat_points, sat_points = get_rate(model, network_input)
         rate = (num_sat_points / cloud_size)
 
-        if rate >= rate_range[0] and rate <= rate_range[1]:
+        if rate > 0:
+            continue
+        
+        model.save(f"model_{input_size}_0.h5")
+        sat, info = run_prover("relaxation", f"{model_path}/{model_name}", property)
+
+        print(f"{rate * 100} - {info['violation_rate']}")
+
+        if rate >= rate_range[0] and rate <= rate_range[1] and info['violation_rate'] > 0:
             print(rate)
-            model.save(f"model_{input_size}_{int(rate * 100)}.h5")
+            model.save(f"model_{input_size}_0.h5")
             quit()
 
 

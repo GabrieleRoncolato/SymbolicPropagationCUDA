@@ -132,25 +132,25 @@ extern "C" __global__ void my_kernel_relaxation(float* input_domain, int input_d
                         new_equation[node_idx + (input_size * 2) + 1] = 0;
                     }
                     // layers subsequent to the first instance of an overestimated node, information is partially lost, apply linear relaxation for subsequent layer case (lower equation and upper equation are potentially different)
-                    else if(no_overestimation == 0 && tempVal_lower < 0.0){
+                    /*else if(tempVal_lower <= 0.0){
                     
-                        float relaxation_lower = tempVal_lower_max / (tempVal_lower_max - tempVal_lower);
-                        float relaxation_upper = tempVal_upper / (tempVal_upper - tempVal_upper_min);
+                        float relaxation_lower = tempVal_upper_min / (tempVal_upper_min - tempVal_lower);
+                        float relaxation_upper = tempVal_upper / (tempVal_upper - tempVal_lower_max);
 
                         //concretize lower to 0, relax upper
-                        if(tempVal_lower <= 0 && tempVal_upper_min <= 0 && tempVal_lower_max <= 0 && tempVal_upper > 0){
+                        if(tempVal_lower_max <= 0 && tempVal_upper_min <= 0 && tempVal_upper > 0){
                             
-                            for(int k = 0; k < (input_size * 2); k += 2){
+                            for(int k = 0; k < input_size * 2; k += 2){
                                 new_equation[node_idx + k] = 0;
                                 new_equation[node_idx + k + 1] *= relaxation_upper;
                             }
 
                             new_equation[node_idx + (input_size * 2)] = 0;
+                            new_equation[node_idx + (input_size * 2) + 1] -= tempVal_lower_max;
                             new_equation[node_idx + (input_size * 2) + 1] *= relaxation_upper;
-                            new_equation[node_idx + (input_size * 2) + 1] -= (tempVal_lower_max * relaxation_upper);
                         }
                         //concretize lower to 0, maintain upper
-                        else if(tempVal_lower <= 0 && tempVal_upper_min <= 0 && tempVal_lower_max > 0 && tempVal_upper > 0){
+                        else if(tempVal_lower_max <= 0 && tempVal_upper_min > 0 && tempVal_upper > 0){
                             
                             for(int k = 0; k < input_size * 2; k += 2){
                                 new_equation[node_idx + k] = 0;
@@ -159,7 +159,7 @@ extern "C" __global__ void my_kernel_relaxation(float* input_domain, int input_d
                             new_equation[node_idx + (input_size * 2)] = 0;
                         }
                         //relax lower, relax upper
-                        else if(tempVal_lower <= 0 && tempVal_upper_min > 0 && tempVal_lower_max <= 0 && tempVal_upper > 0){
+                        else if(tempVal_lower_max <= 0 && tempVal_upper_min <= 0 && tempVal_upper > 0){
                         
                             for(int k = 0; k < input_size * 2; k += 2){
                                 new_equation[node_idx + k] *= relaxation_lower;
@@ -167,11 +167,11 @@ extern "C" __global__ void my_kernel_relaxation(float* input_domain, int input_d
                             }
 
                             new_equation[node_idx + (input_size * 2)] *= relaxation_lower;
+                            new_equation[node_idx + (input_size * 2) + 1] -= tempVal_lower_max;
                             new_equation[node_idx + (input_size * 2) + 1] *= relaxation_upper;
-                            new_equation[node_idx + (input_size * 2) + 1] -= (tempVal_lower_max * relaxation_upper);
                         }
                         //relax lower, maintain upper
-                        else if(tempVal_lower <= 0 && tempVal_upper_min > 0 && tempVal_lower_max > 0 && tempVal_upper > 0){
+                        else if(tempVal_lower_max > 0 && tempVal_upper_min > 0 && tempVal_upper > 0){
 
                             for(int k = 0; k < input_size * 2; k += 2){
                                 new_equation[node_idx + k] *= relaxation_lower;
@@ -179,18 +179,20 @@ extern "C" __global__ void my_kernel_relaxation(float* input_domain, int input_d
                             
                             new_equation[node_idx + (input_size * 2)] *= relaxation_lower;
                         }
-                    }
+                    }*/
                     // first layer containing overestimated nodes, information is partially lost, apply linear relaxation for the first layer case (lower equation and upper equation are equal)
-                    else if(tempVal_lower < 0.0){ 
+                    else if(tempVal_lower <= 0.0){ 
                     
                         float relaxation = tempVal_upper / (tempVal_upper - tempVal_lower);
 
-                        for(int k = 0; k < actual_input_size; k += 2){
+                        for(int k = 0; k < input_size * 2; k += 2){
                             new_equation[node_idx + k] *= relaxation;
                             new_equation[node_idx + k + 1] *= relaxation;
                         }
 
-                        new_equation[node_idx + (input_size * 2) + 1] -= (tempVal_lower * relaxation);
+                        new_equation[node_idx + (input_size * 2)] *= relaxation;
+                        new_equation[node_idx + (input_size * 2) + 1] -= tempVal_lower;
+                        new_equation[node_idx + (input_size * 2) + 1] *= relaxation;
 
                         overestimation_occurred = 1;
                     }

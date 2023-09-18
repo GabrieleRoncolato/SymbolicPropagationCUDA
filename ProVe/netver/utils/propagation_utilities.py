@@ -1,3 +1,4 @@
+import sys
 import numpy as np; import tensorflow as tf
 
 
@@ -199,31 +200,51 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 	else:
 		my_kernel = cp.RawKernel(cuda_code, 'my_kernel_relaxation')
 
-	input_size = layer_sizes[0]
+	free_memory, _ = cp.cuda.runtime.memGetInfo()
 
 	# Convert all the data in cupy array beore the kernel call
+
 	max_layer_size = max(layer_sizes)
-	results_cuda = cp.zeros(layer_sizes[-1] * 2 * len(input_domain), dtype=cp.float32)
+
+	batch_size = int((free_memory * 3 / 5) / (input_domain.nbytes / len(input_domain)))
+	batches = len(input_domain) // batch_size
+
+	if input_domain.nbytes % batch_size != 0:
+		batches += 1
+
+	results_cuda = np.array([], dtype=np.float32)
 
 	layer_sizes = cp.array(layer_sizes, dtype=cp.int32)
 	activations = cp.array(activations, dtype=cp.int32)
-	input_domain = cp.array(input_domain, dtype=cp.float32)
 
 	full_weights = cp.array(full_weights, dtype=cp.float32)
 	full_biases = cp.array(full_biases, dtype=cp.float32)
-	
-	# Define the number of CUDA block
-	block_number = int(len(input_domain) / thread_number) + 1
 
-	# Create and launch the kernel, wait for the sync of all threads
+	for iter in range(batches):
+		if iter == batches - 1:
+			upper_limit = len(input_domain)
+		else:
+			upper_limit = batch_size * (iter + 1)
 
-	kernel_input = (input_domain, len(input_domain), layer_sizes, len(layer_sizes), full_weights, full_biases, results_cuda, max_layer_size, activations)
-	my_kernel((block_number, ), (thread_number, ), kernel_input)
-	cp.cuda.Stream.null.synchronize()
+		subinput_domain = cp.array(input_domain[batch_size * iter : upper_limit], dtype=cp.float32)
+		subresults_cuda = cp.zeros(int(layer_sizes[-1] * 2 * len(subinput_domain)), dtype=cp.float32)
 
+		# Define the number of CUDA block
+		block_number = int(len(subinput_domain) / thread_number) + 1
+
+		# Create and launch the kernel, wait for the sync of all threads
+		kernel_input = (subinput_domain, len(subinput_domain), layer_sizes, len(layer_sizes), full_weights, full_biases, subresults_cuda, max_layer_size, activations)
+		my_kernel((block_number, ), (thread_number, ), kernel_input)
+		cp.cuda.Stream.null.synchronize()
+
+		results_cuda = np.concatenate((results_cuda, cp.asnumpy(subresults_cuda)), axis=0)
+
+		cp.get_default_memory_pool().free_all_blocks()
+
+	cp.get_default_memory_pool().free_all_blocks()
 
 	# Reshape the results and convert in numpy array
-	reshaped_bound = cp.asnumpy(results_cuda).reshape((len(input_domain), net_model.layers[-1].output_shape[1], 2))
+	reshaped_bound = results_cuda.reshape((len(input_domain), net_model.layers[-1].output_shape[1], 2))
 
 	return reshaped_bound
 
