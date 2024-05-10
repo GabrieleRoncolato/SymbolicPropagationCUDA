@@ -10,18 +10,6 @@ from netver.verifier import NetVer
 
 # safety properties
 
-
-# lidars = [[0.06, 0.7]] * 21
-# lidars.append([-1.0, 1.0])
-# lidars.append([0.0, 1.0])
-# lidars[9] = [0.04, 0.05]
-# lidars[10] = [0.04, 0.05]
-# lidars[11] = [0.04, 0.05]
-# property = {"type": "decision", "P": lidars, "A": 4}
-
-
-
-
 # safety property for toy DNN model_2_68
 property={'type':'positive', 'P': [[0.0, 1.0], [0.0, 1.0]]}
 
