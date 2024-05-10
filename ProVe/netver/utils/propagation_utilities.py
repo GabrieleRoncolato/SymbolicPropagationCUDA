@@ -68,8 +68,7 @@ def multi_area_propagation_cpu( input_domain, net_model ):
 
 	# Iterate over every single domain of the input domain list and call the single_area_propagation_cpu function
 	reshaped_bound = np.array([ single_area_propagation_cpu(d, net_model) for d in input_domain ])
-
-	#
+	
 	return reshaped_bound
 
 
@@ -128,7 +127,7 @@ def single_area_propagation_cpu( input_domain, net_model ):
 
 
 
-def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_number=4):
+def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_number=2):
 
 	"""
 	Propagation of the input domain through the network to obtain the OVERESTIMATION of the output bound. 
@@ -206,7 +205,7 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 
 	max_layer_size = max(layer_sizes)
 
-	batch_size = int((free_memory * 3 / 5) / (input_domain.nbytes / len(input_domain)))
+	batch_size = int((free_memory * 1 / 5) / (input_domain.nbytes / len(input_domain)))
 	batches = len(input_domain) // batch_size
 
 	if input_domain.nbytes % batch_size != 0:

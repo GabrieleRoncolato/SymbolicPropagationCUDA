@@ -1,3 +1,0 @@
-/mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/build/CMakeFiles/main.dir
-/mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/build/CMakeFiles/edit_cache.dir
-/mnt/c/users/ronco/Desktop/SymbolicPropagationCUDA/symbolic/build/CMakeFiles/rebuild_cache.dir

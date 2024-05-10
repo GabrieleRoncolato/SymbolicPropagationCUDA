@@ -1,7 +1,13 @@
+import os
+import shutil
+import time
+import psutil
 import netver.utils.propagation_utilities as prop_utils
+from netver.utils.colors import *
 import numpy as np
 import cupy as cp
 
+import netver.utils.disk_utilities as disk_utils
 
 class ProVe( ):
 
@@ -92,7 +98,7 @@ class ProVe( ):
 		if self.cpu_only: self._propagation_method = prop_utils.multi_area_propagation_cpu
 		else: self._propagation_method = prop_utils.multi_area_propagation_gpu
 
-	def verify( self, verbose ):
+	def verify( self, start_time, verbose, estimate_VR=None ):
 		"""
 		Method that perform the formal analysis. When the solver explored and verify all the input domain it returns the
 		violation rate, when the violation rate is zero we coclude that the original property is fully respected, i.e., SAT
@@ -112,53 +118,116 @@ class ProVe( ):
 				key 'exit_code' returns the termination reason (timeout or completed)
 				key 'violation_rate' returns the value of the vilation rate as a percentage of the input domain
 			"""
+		
+		folder_path = "./temp_files"
 
+		if os.path.isdir(folder_path):
+			shutil.rmtree(folder_path)
+		
+		os.mkdir(folder_path)
+
+		input_size = self.P.shape[0]
 		# Flatten the input domain to aobtain the areas matrix to simplify the splitting
 		areas_matrix = np.array([self.P.flatten()])
+		original_shape = areas_matrix.shape[1]
+
+		disk_utils.write_array(areas_matrix, 0, folder_path)
+		free_file_index = 1
 
 		# Array with the number of violations for each depth level
 		violation_rate_array = []
-
 		
 		# Loop until all the subareas are eliminated (verified) or a counter example is found
+
 		for cycle in range(self.time_out_cycle):
 
-			checked_area_log = f"Iteration cycle {cycle:3d} of {self.time_out_cycle:3d} (checked  {100-self.unchecked_area:5.3f}%)"
+			checked_area_log = f"\n{bcolors.BOLD}{bcolors.WARNING}Iteration cycle {cycle:3d}/{self.time_out_cycle:3d} (checked area  {100-self.unchecked_area:5.3f}%){bcolors.ENDC}"
 			if verbose > 0: print( checked_area_log )
 
-			# Eventually round the areas matrix
-			if self.rounding is not None: areas_matrix = np.round(areas_matrix, self.rounding)
+			iter = 0
+			no_areas_left = True
+
+			checked_size = 0
+			violated_length = 0
 			
-			# Reshape the areas matrix in the form (N, input_number, 2)
-			test_domain = areas_matrix.reshape(-1, self.P.shape[0], 2)
+			while True:
+				areas_matrix = disk_utils.read_array(folder_path, iter)
 
-			# Call the propagation method to obtain the output bound from the input area (primal and dual)
-			test_bound = self._propagation_method( test_domain, self.network, self.interval_propagation )
-			test_bound_dual = self._propagation_method( test_domain, self.dual_network, self.interval_propagation )
+				if areas_matrix is None:
+					break
+				
+				#print(f"\tIteration {iter}: {areas_matrix.shape[0]}")
+				#print(areas_matrix)
 
-			# Call the verifier (N(x) >= 0) on all the subareas
-			unknown_id, violated_id, proved_id = self._complete_verifier( test_bound, test_bound_dual )
+				if areas_matrix.shape[0] == 0:
+					iter += 1
+					continue
 
+				if self.rounding is not None: areas_matrix = np.round(areas_matrix, self.rounding)
+				test_domain = areas_matrix.reshape(-1, self.P.shape[0], 2)
+
+
+				# Call the propagation method to obtain the output bound from the input area (primal and dual)
+				test_bound = self._propagation_method( test_domain, self.network, self.interval_propagation )
+				test_bound_dual = self._propagation_method( test_domain, self.dual_network, self.interval_propagation )
+
+				# Call the verifier (N(x) >= 0) on all the subareas
+				unknown_id, violated_id, proved_id = self._complete_verifier( test_bound, test_bound_dual )
+
+				checked_size += proved_id[0].shape[0] + violated_id[0].shape[0]
+				violated_length += len(violated_id[0])
+
+				# Iterate only on the unverified subareas
+				areas_matrix = areas_matrix[unknown_id]
+
+				# Exit check when all the subareas are verified
+				if areas_matrix.shape[0] > 0: no_areas_left = False
+
+				disk_utils.write_array(areas_matrix, iter, folder_path)
+
+				iter += 1
+
+			#print(f"Checked: {checked_size}")
 			# Call the updater for the checked area
-			self._update_unchecked_area( cycle, proved_id[0].shape[0]+violated_id[0].shape[0] )
-			
+			self._update_unchecked_area( cycle, checked_size )
+
 			# Update the violation rate array to compute the violation rate
-			violation_rate_array.append( len(violated_id[0]) )
-
-			# Iterate only on the unverified subareas
-			areas_matrix = areas_matrix[unknown_id]
-
-			# Exit check when all the subareas are verified
-			if areas_matrix.shape[0] == 0: break
-
-			# Exit check when the checked area is below the timout threshold
-			if self.unchecked_area < self.time_out_checked:
-				# Update the violation rate array adding all the remaining elements
-				violation_rate_array[-1] += areas_matrix.shape[0]
+			violation_rate_array.append( violated_length )
+			
+			if no_areas_left:
 				break
 
+			# Exit check when the checked area is below the timeout threshold
+			if self.unchecked_area < self.time_out_checked or free_file_index >= 700:
+				# Update the violation rate array adding all the remaining elements
+				for iter in range(free_file_index):
+					areas_matrix = disk_utils.read_array(folder_path, iter)
+					violation_rate_array[-1] += areas_matrix.shape[0]
+
+				break
+			else:
+				additional_violation = 0
+				for iter in range(free_file_index):
+					areas_matrix = disk_utils.read_array(folder_path, iter)
+					additional_violation += areas_matrix.shape[0]
+				
+				violations_weigth = sum( [ 2**i * n for i, n in enumerate(reversed(violation_rate_array[:-1] + [violation_rate_array[-1] + additional_violation]))] ) 
+				violation_rate =  violations_weigth / 2**(len(violation_rate_array ) -1) * 100 
+
+				end_time = time.time()
+				time_execution = round((end_time-start_time)/60,5)
+
+				print(f"\tTime elapsed: {time_execution} min")
+				print(f"\tVR (considering also the unknow areas as unsafe): {round(violation_rate,5)}%")
+
+				violations_weigth = sum( [ 2**i * n for i, n in enumerate(reversed(violation_rate_array[:-1] + [violation_rate_array[-1]]))] ) 
+				violation_rate =  violations_weigth / 2**(len(violation_rate_array ) -1) * 100 
+				print(f"\tUnderestimated VR (considering the unknow areas as safe): {round(violation_rate, 4)}%")
+				print(f"\tEstimated VR using sampling: {round(estimate_VR, 4)}%")
+
 			# Split the inputs (Iterative Refinement)
-			areas_matrix = self._split( areas_matrix )
+			free_file_index = self._split( input_size, folder_path, free_file_index, original_shape)
+
 
 		# Check if the exit reason is the time out on the cycle
 		if cycle >= self.time_out_cycle:
@@ -244,7 +313,7 @@ class ProVe( ):
 		self.unchecked_area -= 100 / 2**depth * verified_nodes
 		
 
-	def _split( self, areas_matrix ):
+	def _split( self, input_size, folder_path, free_file_index, original_shape ):
 
 		"""
 		Split the current domain in 2 domain, selecting on which node perform the cut
@@ -264,32 +333,66 @@ class ProVe( ):
 				2 times the number of rows of the input one
 		"""
 
-		i = self._chose_node( areas_matrix)
+		iter = 0
+		while True:
+			areas_matrix = disk_utils.read_array(folder_path, iter)
+			#print(f"Areas length: {areas_matrix.shape[0]}")
+			if areas_matrix.shape[0] == 0:
+				iter += 1
+				continue
+
+			i = self._chose_node( areas_matrix)
+			#print(f"split: {i}")
+			break
+
+		available_memory = psutil.virtual_memory().available
+		#disk_chunk_size = int((available_memory * 1 / 100) / (np.dtype(np.float32).itemsize * input_size * 2))
+		disk_chunk_size = 14090864
+
+		#print(f"chunk_size: {disk_chunk_size}")
+
 		free_memory, _ = cp.cuda.runtime.memGetInfo()
 
-		batch_size = int((free_memory * 3 / 5) / (areas_matrix.nbytes / len(areas_matrix)))
-		batches = len(areas_matrix) // batch_size
+		fixed_range = free_file_index
+		for iter in range(fixed_range):
+			areas_matrix = disk_utils.read_array(folder_path, iter)
 
-		if areas_matrix.nbytes % batch_size != 0:
-			batches += 1
+			if areas_matrix.shape[0] == 0:
+				continue
 
-		res = np.empty((0, self._split_matrix[i].shape[1]), dtype=np.float32)
+			batch_size = int((free_memory * 1 / 5) / (areas_matrix.nbytes / len(areas_matrix)))
+			batches = len(areas_matrix) // batch_size
 
-		for iter in range(batches):
-			if iter == batches - 1:
-				upper_limit = len(areas_matrix)
+			if areas_matrix.nbytes % batch_size != 0:
+				batches += 1
+
+			res = np.empty((0, self._split_matrix[i].shape[1]), dtype=np.float32)
+
+			for batch_iter in range(batches):
+				if batch_iter == batches - 1:
+					upper_limit = len(areas_matrix)
+				else:
+					upper_limit = batch_size
+				
+				temp_result = areas_matrix[0 : upper_limit].dot(self._split_matrix[i])
+
+				if batch_iter < batches - 1:
+					areas_matrix = areas_matrix[upper_limit:]
+				
+				res = np.concatenate((res, temp_result), axis=0)
+
+			areas_matrix = res.reshape((len(res) * 2, self.P.shape[0] * 2))
+			
+			if areas_matrix.shape[0] <= disk_chunk_size:
+				disk_utils.write_array(areas_matrix, iter, folder_path)
 			else:
-				upper_limit = batch_size
-			
-			temp_result = areas_matrix[0 : upper_limit].dot(self._split_matrix[i])
+				print(f"Split {iter}: [{disk_chunk_size}, {len(areas_matrix) - disk_chunk_size}]")
+				disk_utils.write_array(areas_matrix[:disk_chunk_size], iter, folder_path)
+				disk_utils.write_array(areas_matrix[disk_chunk_size:], free_file_index, folder_path)
+				free_file_index += 1
 
-			if iter < batches - 1:
-				areas_matrix = areas_matrix[upper_limit:]
-			
-			res = np.concatenate((res, temp_result), axis=0)
 
-		areas_matrix = res.reshape((len(res) * 2, self.P.shape[0] * 2))
-		return areas_matrix
+		return free_file_index
 
 
 	def _chose_node( self, area_matrix):
@@ -311,7 +414,8 @@ class ProVe( ):
 		"""
 
 		# Compute the size of the bound for each sub-interval (i.e., rows)
-		
+		#print(area_matrix.shape)
+
 		row = area_matrix[0]
 		closed = []
 

@@ -12,11 +12,13 @@ extern "C" __global__ void my_kernel_relaxation(float* input_domain, int input_d
     int output_size = layer_sizes[layer_number - 1];
 
     int area_start = thread_id * input_size * 2;
+
+    int actual_input_size = (2 * input_size) + 2;
     
+
     //allocate shared memory
     __shared__ float* shared_allocation[6144];
 
-    int actual_input_size = (2 * input_size) + 2;
 
     int thread_idx = (input_size * 2 + output_size * 2 + actual_input_size * max_layer_size * 2) * threadIdx.x;
     float* thread_allocation = (float*)&shared_allocation[thread_idx];
@@ -27,6 +29,7 @@ extern "C" __global__ void my_kernel_relaxation(float* input_domain, int input_d
     float* output_interval = (float*)&thread_allocation[input_size * 2];
     float* equation = (float*)&thread_allocation[input_size * 2 + output_size * 2];
     float* new_equation = (float*)&thread_allocation[max_layer_size * actual_input_size + input_size * 2 + output_size * 2];
+
 
     for(int i = 0; i < 2 * input_size; i++){
         input_interval[i] = input_domain[area_start + i];

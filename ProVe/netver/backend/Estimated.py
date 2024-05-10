@@ -64,7 +64,7 @@ class Estimated( ):
 				setattr(self, key, value)
 
 	
-	def verify( self, verbose ):
+	def verify( self, start_time, verbose, estimation=None ):
 
 		"""
 		Method that perform the formal analysis.
