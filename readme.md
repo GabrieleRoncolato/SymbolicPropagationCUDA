@@ -3,8 +3,8 @@
 This is the Python implementation of ProVe+SLR, a tool for the #DNN-Verification Problem (i.e., the problem of computing the volume of all the areas that do (not) result in a violation for a given DNN and a safety property). ProVe+SLR is an exact approach that provides provable guarantees on the returned volume. This code is based on ProVe[A].
 
 
-<div style="text-align:center;">
-    <img src="images/overview.png" width="750" height="300" />
+<div style="text-align:center;">    
+<img src="images/overview.png" width="850" height="300" />
 </div>
 
 
