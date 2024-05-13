@@ -1,4 +1,3 @@
-import sys
 import numpy as np; import tensorflow as tf
 
 
@@ -127,7 +126,7 @@ def single_area_propagation_cpu( input_domain, net_model ):
 
 
 
-def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_number=2):
+def multi_area_propagation_gpu(input_domain, net_model, propagation, memory_limit, thread_number=2):
 
 	"""
 	Propagation of the input domain through the network to obtain the OVERESTIMATION of the output bound. 
@@ -141,6 +140,8 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 			(b) a list of bound for each input node and (c) a list of two element for the node, lower and upper
 		net_model : tf.keras.Model
 			tensorflow model to analyze, the model must be formatted in the 'tf.keras.Model(inputs, outputs)' format
+		propagation : str
+			propagation method
 		thread_number : int
 			number of CUDA thread to use for each CUDA block, the choice is free and does not effect the results, 
 			can however effect the performance
@@ -181,7 +182,7 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 		elif layer.activation == tf.keras.activations.sigmoid: activations.append(3)
 
 		# Obtain the netowrk shape as a list
-		layer_sizes.append(layer.input_shape[1])
+		layer_sizes.append(layer.input.shape[1])
 
 		# Obtain all the weights for paramters and biases
 		weight, bias = layer.get_weights()
@@ -205,7 +206,7 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 
 	max_layer_size = max(layer_sizes)
 
-	batch_size = int((free_memory * 1 / 5) / (input_domain.nbytes / len(input_domain)))
+	batch_size = int(memory_limit / (input_domain.nbytes / len(input_domain)))
 	batches = len(input_domain) // batch_size
 
 	if input_domain.nbytes % batch_size != 0:
@@ -243,7 +244,7 @@ def multi_area_propagation_gpu(input_domain, net_model, propagation, thread_numb
 	cp.get_default_memory_pool().free_all_blocks()
 
 	# Reshape the results and convert in numpy array
-	reshaped_bound = results_cuda.reshape((len(input_domain), net_model.layers[-1].output_shape[1], 2))
+	reshaped_bound = results_cuda.reshape((len(input_domain), net_model.layers[-1].output.shape[1], 2))
 
 	return reshaped_bound
 

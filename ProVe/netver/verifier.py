@@ -38,7 +38,7 @@ class NetVer:
 	}
 
 
-	def __init__( self, algo, network, property, **kwargs ):
+	def __init__( self, algo, network, property, memory_limit=0, disk_limit=0, **kwargs ):
 
 		"""
 		Constructor of the class. This method builds the object verifier, setting all the parameters and parsing the proeprty 
@@ -52,6 +52,10 @@ class NetVer:
 				a dictionary that describe the property to analyze
 			network : tf.keras.Model
 				neural network model to analyze
+			memory_limit : int
+				maximum amount of virtual memory to use during the verification process
+			disk_limit : int
+				maximum amount of disk space to use for intermediate results during the verification process
 			kwargs : **kwargs
 				dictionary to overide all the non-necessary paramters (if not specified the algorithm will use the default values)	
 		"""
@@ -69,11 +73,16 @@ class NetVer:
 		else:
 			raise ValueError("Invalid property type, valid values: [positive, decision]")
 
+		kwargs["memory_limit"] = memory_limit
+		kwargs["disk_limit"] = disk_limit
+
 		# Check mismatch between size of the input layer and domain P of the property
 		assert( self.primal_network.input.shape[1] == len(property["P"]) )
 
 		# Creation of the object verifier, calling the selected algorithm class with the required parameters
-		self.verifier = self.algorithms_dictionary[algo]( self.primal_network, np.array(property["P"]), self.dual_network, **kwargs )
+
+		self.verifier = self.algorithms_dictionary[algo]( self.primal_network, np.array(property["P"]), self.dual_network,
+														  **kwargs )
 
 		
 	def run_verifier(self, start_time, verbose=0, estimation=None):

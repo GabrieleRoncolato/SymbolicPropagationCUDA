@@ -1,12 +1,9 @@
 import warnings; warnings.filterwarnings("ignore")
 import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
-import numpy as np
 import time
 from netver.utils.colors import bcolors
 from netver.verifier import NetVer
-
-
 
 # safety properties
 
@@ -48,7 +45,6 @@ property={'type':'positive', 'P': [[0.0, 1.0], [0.0, 1.0]]}
 
 
 def run_prover(propagation, model_str, property):
-
     # load your model
     model = tf.keras.models.load_model(model_str, compile=False)
 
@@ -59,8 +55,12 @@ def run_prover(propagation, model_str, property):
     verbose = 1                 # whether to print info abount the computation of ProVe
     cloud = 3000000             # number of random state to sample for the approximate verification i.e., the "estimated" analysis
 
+    memory_limit = 0            # maximum threshold for virtual memory usage (indicate 0 to use the available free memory)
+    disk_limit = 0              # maximum threshold for disk usage (indicate 0 to use the available free disk space)
+
     if method == 'ProVe':
-        netver = NetVer(method, model, property, rounding=discretization, cpu_only=CPU, interval_propagation=propagation, reversed=False)
+        netver = NetVer(method, model, property, memory_limit=memory_limit, disk_limit=disk_limit,
+                        rounding=discretization, cpu_only=CPU, interval_propagation=propagation, reversed=False)
     else:
         netver = NetVer("estimated", model, property, cloud_size=cloud)
 
