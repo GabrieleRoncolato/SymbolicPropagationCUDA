@@ -9,9 +9,10 @@ This is the Python implementation of ProVe+SLR, a tool for the #DNN-Verification
 
 
 ## Dependencies: 
-    - Tensorflow
-    - numpy
-    - cupy
+    - Tensorflow 2.16.1
+    - numpy 1.26.4
+    - cupy 13.1.0
+    - psutil 5.9.8
     - cmake
 
 ## Definition of the properties
@@ -51,13 +52,15 @@ property = {
 ProVe will use the default parameters for the formal analysis. You can change all the parameters when create the NetVer object as follows: 
 ```python
 from netver.main import NetVer
-netver = NetVer(algorithm_key, model, semi_formal=True, rounding=3)
+netver = NetVer(algorithm_key, model, memory_limit=0, disk_limit=0, semi_formal=True, rounding=3)
 ```
 Follow a list of the available parameters (with the default value):
 ```python
 # Common to all the algorithms
 time_out_cycle = 35 #timeout on the number of cycles
 time_out_checked = 0 #timeout on the checked area. If the unproved area is less than this value, the algorithm stops returning the residual as a violation
+memory_limit=0 #upper threshold for the amount of virtual memory to occupy during parallel computations, 0 indicates the current amount of free available virtual memory as the upper threshold
+disk_limit=0 #upper threshold for the amount of disk space to occupy when saving partial results, 0 indicates the current amount of free disk space as the upper threshold
 rounding = None #rounding value for the input domain (P)
 
 # Only for Estimated
