@@ -4,7 +4,7 @@ This is the Python implementation of ProVe+SLR, a tool for the #DNN-Verification
 
 
 <div style="text-align:center;">    
-<img src="images/overview.png" width="850" height="300" />
+<img src="images/overview.png" width="1000" height="250" />
 </div>
 
 
