@@ -1,11 +1,11 @@
 # Efficient #DNN-Verification via Parallel Symbolic Interval Propagation and Linear Relaxation
 
-This is the Python implementation of ProVe+SLR, a tool for the #DNN-Verification Problem (i.e., the problem of computing the volume of all the areas that do (not) result in a violation for a given DNN and a safety property). ProVe+SLR is an exact approach that provides provable guarantees on the returned volume. This code is based on ProVe[A].
+This is the Python implementation of ProVe+SLR, a tool for the #DNN-Verification Problem (i.e., the problem of computing the volume of all the areas that do (not) result in a violation for a given DNN and a safety property). ProVe+SLR is an exact approach that provides provable guarantees on the returned volume. This code is based on ProVe (Corsi et al. 2021).
 
 
-<div style="text-align:center;">    
-<img src="images/overview.png" width="1000" height="250" />
-</div>
+
+![Alt text](https://github.com/GabrieleRoncolato/SymbolicPropagationCUDA/blob/master/images/overview.png)
+****
 
 
 ## Dependencies: 
@@ -19,7 +19,7 @@ This is the Python implementation of ProVe+SLR, a tool for the #DNN-Verification
 Properties can be defined with 3 different formulations:
 
 ### PQ
-Following the definition of Marabou [Katz et al.], given an input property P and an output property Q, the property is verified if for each *x* in P it follows that N(x) is in Q *(i.e., if the input belongs to the interval P, the output must belongs to the interval Q)*.
+Following the definition of Marabou [Katz et al.], given an input property P and an output property Q, the property is verified if for each *x* in P, it follows that N(x) is in Q *(i.e., if the input belongs to the interval P, the output must belong to the interval Q)*.
 ```python
 property = {
 	"type" : "PQ",
@@ -29,7 +29,7 @@ property = {
 ```
 
 ### Decision
-Following the definition of ProVe [Corsi et al.], given an input property P and an output node A corresponding to an action, the property is verified if for each *x* in P it follows that the action A will never be selected *(i.e., if the input belongs to the interval P, the output of node A is never the one with the highest value)*.
+Following the definition of ProVe [Corsi et al.], given an input property P and an output node A corresponding to an action, the property is verified if, for each *x* in P, it follows that the action A will never be selected *(i.e., if the input belongs to the interval P, the output of node A is never the one with the highest value)*.
 ```python
 property = {
 	"type" : "decision",
@@ -39,34 +39,39 @@ property = {
 ```
 
 ### Positive
-Following the definition of α,β-CROWN [Wang et al.], given an input property P the output of the network is non negative *(i.e., if the input belongs to the interval P, the output of each node is greater or equals zero)*
+Following the definition of α,β-CROWN [Wang et al.], given an input property P, the output of the network is non-negative *(i.e., if the input belongs to the interval P, the output of each node is greater or equals zero)*
 ```python
 property = {
-	"type" : "positive",
+	"type": "positive",
 	"P" : [[0.1, 0.3], [0.7, 1.1]]
 }
 ```
 
 
 ## Parameters
-ProVe will use the default parameters for the formal analysis. You can change all the parameters when create the NetVer object as follows: 
-```python
-from netver.main import NetVer
-netver = NetVer(algorithm_key, model, memory_limit=0, disk_limit=0, semi_formal=True, rounding=3)
-```
+ProVe will use the default parameters for the formal analysis. You can change all the parameters when creating the NetVer object as follows. 
 Follow a list of the available parameters (with the default value):
+
 ```python
 # Common to all the algorithms
-time_out_cycle = 35 #timeout on the number of cycles
-time_out_checked = 0 #timeout on the checked area. If the unproved area is less than this value, the algorithm stops returning the residual as a violation
-memory_limit=0 #upper threshold for the amount of virtual memory to occupy during parallel computations, 0 indicates the current amount of free available virtual memory as the upper threshold
-disk_limit=0 #upper threshold for the amount of disk space to occupy when saving partial results, 0 indicates the current amount of free disk space as the upper threshold
-rounding = None #rounding value for the input domain (P)
+time_out_cycle = 35         # timeout on the number of cycles
+time_out_checked = 0        # timeout on the checked area. If the unproved area is less than this value, the algorithm stops returning the residual as a violation
+rounding = None             # rounding value for the input domain (P)
 
-# Only for Estimated
-cloud_size = 10000 #indicates the size of the point cloud for the method
+method = "ProVe"            # select the method: for the formal analysis, select "ProVe" otherwise, "estimated"
+
+propagation= ["naive", "symbolic", "relaxation"] # Select the way to perform the interval propagation: "naive" with simple Moore algebra,
+						 #  "symbolic" for the method proposed in (Formal Security Analysis of Neural Networks using Symbolic Intervals, Wang et al. 2018)
+						 #    and finally, "relaxation" for the method proposed in (Efficient Formal Safety Analysis of Neural Networks, Wang et al. 2018)  
+
+discretization = 3          # how many digitals are considered for the computation
+CPU = False                 # Select the hardware for the formal analysis
+verbose = 1                 # whether to print info about the computation of ProVe
+cloud = 3000000             # number of random states to sample for the approximate verification i.e., the "estimated" analysis
+memory_limit = 0            # maximum threshold for virtual memory usage (indicate 0 to use the available free memory)
+disk_limit = 0              # maximum threshold for disk usage (indicate 0 to use the available free disk space)
 ```
-
+Please note that, due to the #P-hardness of the problem, performing the exact count/enumeration of all the portions of the property's domain that violate a safety property could require some time and, in general, is subject to strong scalability issues. To address such an issue, in the provided code, we furnish the possibility of using both the RAM memory and the disk memory in order to complete the verification process without incurring memory errors. We refer the interested reader to (C) for further details.
 
 ## Results of the analysis
 The analysis returns two values, SAT and info. *SAT* is true if the property is respected, UNSAT otherwise; *value* is a dictionary that contains different values based on the used algorithm:
@@ -76,12 +81,16 @@ The analysis returns two values, SAT and info. *SAT* is true if the property is 
 - exit_reason: reason for an anticipate exit *(usually timeout)*
 
 
+
 ## Example Code
 To run the example code, use *example.py* from the main folder. For the time being, we only support Keras models.
 ```python
+import warnings; warnings.filterwarnings("ignore")
+import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import numpy as np
-from netver.main import NetVer
+import time
+from netver.verifier import NetVer
 
 def get_actor_model( ):
 	inputs = tf.keras.layers.Input(shape=(2,))
@@ -100,22 +109,49 @@ if __name__ == "__main__":
 		"A": 1
 	}
 
-	netver = NetVer("complete_prove", model, property)
-	sat, info = netver.run_verifier(verbose=1)
+
+	approx = NetVer("estimated", model, property, cloud_size=1000000).run_verifier(time.time(), verbose=0)[1]['violation_rate']
+	print(f"\n\tEstimated VR is {round(approx, 4)}%\n")
+
+	netver = NetVer("ProVe", model, property, memory_limit=0, disk_limit=0,rounding=3, cpu_only=False, interval_propagation="relaxation")
+	sat, info = netver.run_verifier(start_time=time.time(), verbose=1, estimation=approx)
 	print( f"\nThe property is SAT? {sat}" )
-	print( f"\tviolation rate: {info['violation_rate']}\n" )
+	print( f"\tViolation rate: {info['violation_rate']}\n" )
 ```
 
 
 ## Contributors
 *  **Gabriele Roncolato** - gabriele.roncolato@studenti.univr.it
 *  **Luca Marzari** - luca.marzari@univr.it
+*  **Davide Corsi** - davide.corsi@univr.it
 
 ## Reference
-[A] [Formal verification of neural networks for safety-critical tasks in deep reinforcement learning](https://proceedings.mlr.press/v161/corsi21a.html) Corsi D., Marchesini E., and Farinelli A. UAI, 2021
+If you use our verifier in your work, please kindly cite our papers:
+
+**(A)** [Formal verification of neural networks for safety-critical tasks in deep reinforcement learning](https://proceedings.mlr.press/v161/corsi21a.html) Corsi D., Marchesini E., and Farinelli A. UAI, 2021
+```
+@inproceedings{corsi2021formal,
+  title={Formal verification of neural networks for safety-critical tasks in deep reinforcement learning},
+  author={Corsi, Davide and Marchesini, Enrico and Farinelli, Alessandro},
+  booktitle={Uncertainty in Artificial Intelligence},
+  pages={333--343},
+  year={2021},
+  organization={PMLR}
+}
+```
     
-If you use our verifier in your work, please kindly cite our paper:
-[Scaling #DNN-Verification Tools with Efficient Bound Propagation and Parallel Computing](https://arxiv.org/pdf/2312.05890).  Marzari L., Roncolato G., and Farinelli A. AIRO, 2023
+**(B)** [The \#DNN-Verification Problem: Counting Unsafe Inputs for Deep Neural Networks](https://dl.acm.org/doi/abs/10.24963/ijcai.2023/25).  Marzari* L., Corsi* D., Cicalese F and Farinelli A. IJCAI, 2023
+```
+@inproceedings{marzari2023dnn,
+  title={The \#DNN-Verification Problem: Counting Unsafe Inputs for Deep Neural Networks},
+  author={Marzari, Luca and Corsi, Davide and Cicalese, Ferdinando and Farinelli, Alessandro},
+  booktitle={Proceedings of the Thirty-Second International Joint Conference on Artificial Intelligence},
+  pages={217--224},
+  year={2023}
+}
+```
+
+**(C)** [Scaling #DNN-Verification Tools with Efficient Bound Propagation and Parallel Computing](https://arxiv.org/pdf/2312.05890).  Marzari L., Roncolato G., and Farinelli A. AIRO, 2023
 ```
 @incollection{marzari2023scaling,
   title={Scaling \#DNN-Verification Tools with Efficient Bound Propagation and Parallel Computing},
